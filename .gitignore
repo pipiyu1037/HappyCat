@@ -1,0 +1,109 @@
+# Build directories
+build/
+Build/
+out/
+bin/
+lib/
+cmake-build-*/
+
+# IDE and editor files
+.idea/
+.vs/
+.vscode/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.pdb
+*.ipch
+*.aps
+
+# Compiled files
+*.obj
+*.o
+*.a
+*.lib
+*.dll
+*.exe
+*.so
+*.dylib
+*.ilk
+*.meta
+*.pch
+*.pdb
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Dependencies (third-party libraries are downloaded, not committed)
+third_party/glfw/
+third_party/glm/
+third_party/spdlog/
+third_party/imgui/
+third_party/stb/
+third_party/tinyobjloader/
+third_party/tinygltf/
+third_party/glslang/
+third_party/spirv-cross/
+
+# Shader cache and compiled shaders (keep source, ignore compiled)
+*.spv
+*.spvasm
+shaders/**/*.spv
+shaders/**/*.spvasm
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Windows specific
+Desktop.ini
+ehthumbs.db
+*.lnk
+
+# Linux specific
+*~
+.directory
+
+# Mac specific
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Package managers
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python (if used for scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+venv/
+ENV/
+
+# Vulkan shader validation cache
+.cache/
+
+# Local configuration files (keep templates, ignore local)
+*.local
+.env
+.env.local
