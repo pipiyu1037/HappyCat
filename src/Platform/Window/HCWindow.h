@@ -7,10 +7,10 @@
 
 namespace happycat {
 
-class GLFWWindow : public Window {
+class HCWindow : public Window {
 public:
-    explicit GLFWWindow(const WindowCreateInfo& info);
-    ~GLFWWindow() override;
+    explicit HCWindow(const WindowCreateInfo& info);
+    ~HCWindow() override;
 
     // Events
     void PollEvents() override;

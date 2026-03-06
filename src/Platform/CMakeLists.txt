@@ -4,8 +4,8 @@ add_library(HappyCatPlatform STATIC
     # Window
     Window/Window.h
     Window/Window.cpp
-    Window/GLFWWindow.h
-    Window/GLFWWindow.cpp
+    Window/HCWindow.h
+    Window/HCWindow.cpp
 
     # Input
     Input/InputManager.h

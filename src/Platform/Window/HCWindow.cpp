@@ -1,11 +1,11 @@
-#include "GLFWWindow.h"
+#include "HCWindow.h"
 #include "Core/Utils/Logger.h"
 
 namespace happycat {
 
-u32 GLFWWindow::s_WindowCount = 0;
+u32 HCWindow::s_WindowCount = 0;
 
-void GLFWWindow::InitGLFW() {
+void HCWindow::InitGLFW() {
     if (s_WindowCount == 0) {
         if (!glfwInit()) {
             HC_CORE_CRITICAL("Failed to initialize GLFW");
@@ -17,14 +17,14 @@ void GLFWWindow::InitGLFW() {
     s_WindowCount++;
 }
 
-void GLFWWindow::ShutdownGLFW() {
+void HCWindow::ShutdownGLFW() {
     s_WindowCount--;
     if (s_WindowCount == 0) {
         glfwTerminate();
     }
 }
 
-GLFWWindow::GLFWWindow(const WindowCreateInfo& info) {
+HCWindow::HCWindow(const WindowCreateInfo& info) {
     InitGLFW();
 
     // GLFW hints
@@ -50,7 +50,7 @@ GLFWWindow::GLFWWindow(const WindowCreateInfo& info) {
     glfwSetWindowUserPointer(m_Window, this);
 
     glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, i32 width, i32 height) {
-        auto* w = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+        auto* w = static_cast<HCWindow*>(glfwGetWindowUserPointer(window));
         if (w) {
             w->m_Width = static_cast<u32>(width);
             w->m_Height = static_cast<u32>(height);
@@ -61,35 +61,35 @@ GLFWWindow::GLFWWindow(const WindowCreateInfo& info) {
     });
 
     glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) {
-        auto* w = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+        auto* w = static_cast<HCWindow*>(glfwGetWindowUserPointer(window));
         if (w && w->m_CloseCallback) {
             w->m_CloseCallback();
         }
     });
 
     glfwSetKeyCallback(m_Window, [](GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods) {
-        auto* w = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+        auto* w = static_cast<HCWindow*>(glfwGetWindowUserPointer(window));
         if (w && w->m_KeyCallback) {
             w->m_KeyCallback(key, scancode, action, mods);
         }
     });
 
     glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, f64 xpos, f64 ypos) {
-        auto* w = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+        auto* w = static_cast<HCWindow*>(glfwGetWindowUserPointer(window));
         if (w && w->m_MouseCallback) {
             w->m_MouseCallback(xpos, ypos);
         }
     });
 
     glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, i32 button, i32 action, i32 mods) {
-        auto* w = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+        auto* w = static_cast<HCWindow*>(glfwGetWindowUserPointer(window));
         if (w && w->m_MouseButtonCallback) {
             w->m_MouseButtonCallback(button, action, mods);
         }
     });
 
     glfwSetScrollCallback(m_Window, [](GLFWwindow* window, f64 xoffset, f64 yoffset) {
-        auto* w = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+        auto* w = static_cast<HCWindow*>(glfwGetWindowUserPointer(window));
         if (w && w->m_ScrollCallback) {
             w->m_ScrollCallback(xoffset, yoffset);
         }
@@ -98,7 +98,7 @@ GLFWWindow::GLFWWindow(const WindowCreateInfo& info) {
     HC_CORE_INFO("GLFW window created: {0}x{1}", m_Width, m_Height);
 }
 
-GLFWWindow::~GLFWWindow() {
+HCWindow::~HCWindow() {
     if (m_Window) {
         glfwDestroyWindow(m_Window);
         m_Window = nullptr;
@@ -107,48 +107,48 @@ GLFWWindow::~GLFWWindow() {
     HC_CORE_INFO("GLFW window destroyed");
 }
 
-void GLFWWindow::PollEvents() {
+void HCWindow::PollEvents() {
     glfwPollEvents();
 }
 
-bool GLFWWindow::ShouldClose() const {
+bool HCWindow::ShouldClose() const {
     return glfwWindowShouldClose(m_Window) == GLFW_TRUE;
 }
 
-void GLFWWindow::GetFramebufferSize(u32& width, u32& height) const {
+void HCWindow::GetFramebufferSize(u32& width, u32& height) const {
     i32 w, h;
     glfwGetFramebufferSize(m_Window, &w, &h);
     width = static_cast<u32>(w);
     height = static_cast<u32>(h);
 }
 
-VkSurfaceKHR GLFWWindow::CreateSurface(VkInstance instance) const {
+VkSurfaceKHR HCWindow::CreateSurface(VkInstance instance) const {
     VkSurfaceKHR surface;
     VK_CHECK(glfwCreateWindowSurface(instance, m_Window, nullptr, &surface));
     return surface;
 }
 
-void GLFWWindow::SetResizeCallback(ResizeCallback callback) {
+void HCWindow::SetResizeCallback(ResizeCallback callback) {
     m_ResizeCallback = callback;
 }
 
-void GLFWWindow::SetCloseCallback(CloseCallback callback) {
+void HCWindow::SetCloseCallback(CloseCallback callback) {
     m_CloseCallback = callback;
 }
 
-void GLFWWindow::SetKeyCallback(KeyCallback callback) {
+void HCWindow::SetKeyCallback(KeyCallback callback) {
     m_KeyCallback = callback;
 }
 
-void GLFWWindow::SetMouseCallback(MouseCallback callback) {
+void HCWindow::SetMouseCallback(MouseCallback callback) {
     m_MouseCallback = callback;
 }
 
-void GLFWWindow::SetMouseButtonCallback(MouseButtonCallback callback) {
+void HCWindow::SetMouseButtonCallback(MouseButtonCallback callback) {
     m_MouseButtonCallback = callback;
 }
 
-void GLFWWindow::SetScrollCallback(ScrollCallback callback) {
+void HCWindow::SetScrollCallback(ScrollCallback callback) {
     m_ScrollCallback = callback;
 }
 
