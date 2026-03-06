@@ -114,7 +114,7 @@ src/
 │   ├── RenderResource.h   # TextureHandle, BufferHandle
 │   └── RenderGraphBuilder.h
 ├── Platform/
-│   └── Window/GLFWWindow.h
+│   └── Window/HCWindow.h
 └── Engine/
     └── Application.h      # Base application class
 ```

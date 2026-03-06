@@ -25,7 +25,7 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 
 #### 平台模块 (HappyCatPlatform)
 - [x] 窗口抽象接口 (`Window.h`)
-- [x] GLFW 窗口实现 (`GLFWWindow.h/cpp`)
+- [x] GLFW 窗口实现 (`HCWindow.h/cpp`)
 - [x] 输入管理器 (`InputManager.h/cpp`) - 键盘/鼠标输入处理
 
 #### RHI 模块 (HappyCatRHI)
