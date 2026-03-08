@@ -15,7 +15,8 @@ class VKCommandBuffer;
 
 class FrameContext {
 public:
-    FrameContext(VKDevice* device, u32 framesInFlight);
+    // Create with enough resources for both frames in flight and swapchain images
+    FrameContext(VKDevice* device, u32 framesInFlight, u32 swapchainImageCount);
     ~FrameContext();
 
     // Non-copyable
@@ -31,9 +32,9 @@ public:
     u64 GetFrameNumber() const { return m_FrameNumber; }
     u32 GetFramesInFlight() const { return m_FramesInFlight; }
 
-    // Synchronization
-    VkSemaphore GetImageAvailableSemaphore() const;
-    VkSemaphore GetRenderFinishedSemaphore() const;
+    // Synchronization - indexed by swapchain image for both semaphores
+    VkSemaphore GetImageAvailableSemaphore(u32 imageIndex) const;
+    VkSemaphore GetRenderFinishedSemaphore(u32 imageIndex) const;
     VkFence GetRenderFence() const;
 
     // Command buffer
@@ -41,8 +42,6 @@ public:
 
 private:
     struct FrameData {
-        std::unique_ptr<VKSemaphore> imageAvailableSemaphore;
-        std::unique_ptr<VKSemaphore> renderFinishedSemaphore;
         std::unique_ptr<VKFence> renderFence;
         std::unique_ptr<VKCommandPool> commandPool;
         std::unique_ptr<VKCommandBuffer> commandBuffer;
@@ -50,10 +49,17 @@ private:
 
     VKDevice* m_Device;
     u32 m_FramesInFlight;
+    u32 m_SwapchainImageCount;
     u32 m_CurrentFrame = 0;
     u64 m_FrameNumber = 0;
 
     std::vector<FrameData> m_FrameData;
+
+    // Per-swapchain-image semaphores for acquire (prevents reuse issues)
+    std::vector<std::unique_ptr<VKSemaphore>> m_ImageAvailableSemaphores;
+
+    // Per-swapchain-image render finished semaphores (prevents reuse issues with present)
+    std::vector<std::unique_ptr<VKSemaphore>> m_RenderFinishedSemaphores;
 };
 
 } // namespace happycat

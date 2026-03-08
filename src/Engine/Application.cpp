@@ -42,15 +42,15 @@ bool Application::Initialize() {
     }
 
     // Create surface
-    VkSurfaceKHR surface = m_Window->CreateSurface(m_Instance->GetHandle());
+    m_Surface = m_Window->CreateSurface(m_Instance->GetHandle());
 
     // Pick physical device
-    VkPhysicalDevice physicalDevice = m_Instance->PickPhysicalDevice(surface);
+    VkPhysicalDevice physicalDevice = m_Instance->PickPhysicalDevice(m_Surface);
 
     // Create device
     VKDevice::CreateInfo deviceInfo{};
     deviceInfo.physicalDevice = physicalDevice;
-    deviceInfo.surface = surface;
+    deviceInfo.surface = m_Surface;
     deviceInfo.enableValidation = m_Config.enableValidation;
     m_Device = VKDevice::Create(deviceInfo);
 
@@ -63,7 +63,7 @@ bool Application::Initialize() {
     VKSwapChain::CreateInfo swapChainInfo{};
     swapChainInfo.width = m_Config.windowWidth;
     swapChainInfo.height = m_Config.windowHeight;
-    swapChainInfo.surface = surface;
+    swapChainInfo.surface = m_Surface;
     swapChainInfo.vsync = true;
     m_SwapChain = VKSwapChain::Create(m_Device.get(), swapChainInfo);
 
@@ -73,7 +73,8 @@ bool Application::Initialize() {
     }
 
     // Create frame context
-    m_FrameContext = std::make_unique<FrameContext>(m_Device.get(), m_Config.framesInFlight);
+    m_FrameContext = std::make_unique<FrameContext>(m_Device.get(), m_Config.framesInFlight,
+                                                      m_SwapChain->GetImageCount());
 
     // Set window callbacks
     m_Window->SetResizeCallback([this](u32 width, u32 height) {
@@ -112,8 +113,12 @@ void Application::Shutdown() {
     m_SwapChain.reset();
     m_Device.reset();
 
-    // Destroy surface
-    // Note: surface is created with instance allocator, so it's cleaned up with instance
+    // Destroy surface before instance
+    if (m_Surface != VK_NULL_HANDLE && m_Instance) {
+        vkDestroySurfaceKHR(m_Instance->GetHandle(), m_Surface, nullptr);
+        m_Surface = VK_NULL_HANDLE;
+    }
+
     m_Instance.reset();
     m_Window.reset();
 

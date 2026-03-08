@@ -60,14 +60,14 @@ void TriangleApp::OnRender() {
 
     frameCtx->BeginFrame();
 
-    // Acquire next image (use semaphore only, not fence)
-    u32 imageIndex = swapChain->AcquireNextImage(
-        frameCtx->GetImageAvailableSemaphore(),
-        VK_NULL_HANDLE
-    );
+    // Acquire next image using per-frame semaphore (use frame index for acquire semaphore)
+    u32 frameIndex = frameCtx->GetCurrentFrameIndex();
+    VkSemaphore imageAvailableSemaphore = frameCtx->GetImageAvailableSemaphore(frameIndex);
+    u32 imageIndex = swapChain->AcquireNextImage(imageAvailableSemaphore, VK_NULL_HANDLE);
 
     if (imageIndex == UINT32_MAX) {
         // Swapchain needs recreation
+        frameCtx->EndFrame();
         return;
     }
 
@@ -141,10 +141,9 @@ void TriangleApp::OnRender() {
 
     vkEndCommandBuffer(cmd);
 
-    // Submit
+    // Submit with proper synchronization
     VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkSemaphore imageAvailableSemaphore = frameCtx->GetImageAvailableSemaphore();
-    VkSemaphore renderFinishedSemaphore = frameCtx->GetRenderFinishedSemaphore();
+    VkSemaphore renderFinishedSemaphore = frameCtx->GetRenderFinishedSemaphore(imageIndex);
     VkFence renderFence = frameCtx->GetRenderFence();
 
     VkSubmitInfo submitInfo{};

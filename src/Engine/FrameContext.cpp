@@ -8,35 +8,50 @@
 
 namespace happycat {
 
-FrameContext::FrameContext(VKDevice* device, u32 framesInFlight)
-    : m_Device(device), m_FramesInFlight(framesInFlight)
+FrameContext::FrameContext(VKDevice* device, u32 framesInFlight, u32 swapchainImageCount)
+    : m_Device(device), m_FramesInFlight(framesInFlight), m_SwapchainImageCount(swapchainImageCount)
 {
     m_FrameData.resize(framesInFlight);
 
     u32 graphicsQueueFamily = device->GetPhysicalDevice()->GetQueueFamilyIndices().graphics.value();
 
+    // Create per-frame resources
     for (u32 i = 0; i < framesInFlight; i++) {
         auto& frame = m_FrameData[i];
 
-        frame.imageAvailableSemaphore = VKSemaphore::Create(device);
-        frame.renderFinishedSemaphore = VKSemaphore::Create(device);
         frame.renderFence = VKFence::Create(device, true);
-
         frame.commandPool = VKCommandPool::Create(device, graphicsQueueFamily);
         frame.commandBuffer = VKCommandBuffer::Create(device, frame.commandPool.get());
     }
 
-    HC_CORE_INFO("Frame context created with {0} frames in flight", framesInFlight);
+    // Create per-swapchain-image semaphores for acquire
+    // This ensures each swapchain image has its own semaphore, preventing reuse issues
+    m_ImageAvailableSemaphores.resize(swapchainImageCount);
+    for (u32 i = 0; i < swapchainImageCount; i++) {
+        m_ImageAvailableSemaphores[i] = VKSemaphore::Create(device);
+    }
+
+    // Create per-swapchain-image render finished semaphores
+    // This prevents reuse issues when presenting
+    m_RenderFinishedSemaphores.resize(swapchainImageCount);
+    for (u32 i = 0; i < swapchainImageCount; i++) {
+        m_RenderFinishedSemaphores[i] = VKSemaphore::Create(device);
+    }
+
+    HC_CORE_INFO("Frame context created with {0} frames in flight, {1} swapchain images",
+        framesInFlight, swapchainImageCount);
 }
 
 FrameContext::~FrameContext() {
+    m_RenderFinishedSemaphores.clear();
+    m_ImageAvailableSemaphores.clear();
     m_FrameData.clear();
 }
 
 void FrameContext::BeginFrame() {
     auto& frame = m_FrameData[m_CurrentFrame];
 
-    // Wait for previous frame
+    // Wait for previous frame to complete
     frame.renderFence->Wait();
     frame.renderFence->Reset();
 
@@ -49,12 +64,12 @@ void FrameContext::EndFrame() {
     m_FrameNumber++;
 }
 
-VkSemaphore FrameContext::GetImageAvailableSemaphore() const {
-    return m_FrameData[m_CurrentFrame].imageAvailableSemaphore->GetHandle();
+VkSemaphore FrameContext::GetImageAvailableSemaphore(u32 imageIndex) const {
+    return m_ImageAvailableSemaphores[imageIndex % m_SwapchainImageCount]->GetHandle();
 }
 
-VkSemaphore FrameContext::GetRenderFinishedSemaphore() const {
-    return m_FrameData[m_CurrentFrame].renderFinishedSemaphore->GetHandle();
+VkSemaphore FrameContext::GetRenderFinishedSemaphore(u32 imageIndex) const {
+    return m_RenderFinishedSemaphores[imageIndex % m_SwapchainImageCount]->GetHandle();
 }
 
 VkFence FrameContext::GetRenderFence() const {

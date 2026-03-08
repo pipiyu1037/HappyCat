@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Utils/Types.h"
+#include "RHI/RHIDefs.h"
 #include <memory>
 #include <string>
 
@@ -65,6 +66,8 @@ private:
     std::unique_ptr<VKDevice> m_Device;
     std::unique_ptr<VKSwapChain> m_SwapChain;
     std::unique_ptr<FrameContext> m_FrameContext;
+
+    VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 };
 
 } // namespace happycat
