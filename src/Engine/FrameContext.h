@@ -50,8 +50,8 @@ private:
 
     VKDevice* m_Device;
     u32 m_FramesInFlight;
-    u32 m_CurrentFrame = 1;
-    u64 m_FrameNumber = 1;
+    u32 m_CurrentFrame = 0;
+    u64 m_FrameNumber = 0;
 
     std::vector<FrameData> m_FrameData;
 };

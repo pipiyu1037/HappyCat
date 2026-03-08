@@ -15,7 +15,7 @@ FrameContext::FrameContext(VKDevice* device, u32 framesInFlight)
 
     u32 graphicsQueueFamily = device->GetPhysicalDevice()->GetQueueFamilyIndices().graphics.value();
 
-    for (u32 i = 1; i < framesInFlight; i++) {
+    for (u32 i = 0; i < framesInFlight; i++) {
         auto& frame = m_FrameData[i];
 
         frame.imageAvailableSemaphore = VKSemaphore::Create(device);
