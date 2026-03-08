@@ -165,6 +165,9 @@ void TriangleApp::OnRender() {
 }
 
 void TriangleApp::OnResize(u32 width, u32 height) {
+    // Wait for device to be idle before destroying framebuffers
+    GetDevice()->WaitIdle();
+
     // Clean up old framebuffers on resize
     VkDevice device = GetDevice()->GetHandle();
 

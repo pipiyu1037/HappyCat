@@ -50,16 +50,17 @@ bool VKSwapChain::Initialize(VKDevice* device, const CreateInfo& info) {
         }
     }
 
-    // Choose extent
-    m_Extent = support.capabilities.currentExtent;
-    if (m_Extent.width == UINT32_MAX) {
-        m_Extent.width = std::clamp(info.width,
-            support.capabilities.minImageExtent.width,
-            support.capabilities.maxImageExtent.width);
-        m_Extent.height = std::clamp(info.height,
-            support.capabilities.minImageExtent.height,
-            support.capabilities.maxImageExtent.height);
-    }
+    // Choose extent - use provided size, clamped to capabilities
+    // Always query fresh capabilities for extent
+    VkSurfaceCapabilitiesKHR caps;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->GetHandle(), m_Surface, &caps);
+
+    m_Extent.width = std::clamp(info.width,
+        caps.minImageExtent.width,
+        caps.maxImageExtent.width);
+    m_Extent.height = std::clamp(info.height,
+        caps.minImageExtent.height,
+        caps.maxImageExtent.height);
 
     // Image count
     u32 imageCount = support.capabilities.minImageCount + 1;
