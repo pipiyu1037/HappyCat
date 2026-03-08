@@ -107,3 +107,5 @@ ENV/
 *.local
 .env
 .env.local
+
+.claude/

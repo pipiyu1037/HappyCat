@@ -88,7 +88,7 @@ bool VKPhysicalDevice::Initialize(VkPhysicalDevice device, VkSurfaceKHR surface)
     return true;
 }
 
-QueueFamilyIndices VKPhysicalDevice::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+QueueFamilyIndices VKPhysicalDevice ::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
     QueueFamilyIndices indices;
 
     u32 queueFamilyCount = 0;

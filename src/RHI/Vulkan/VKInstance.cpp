@@ -125,6 +125,7 @@ bool VKInstance::Initialize(const CreateInfo& info) {
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
+        // Need to check
         bool layerFound = false;
         for (const char* layerName : VALIDATION_LAYERS) {
             for (const auto& layerProps : availableLayers) {
@@ -210,8 +211,7 @@ void VKInstance::DestroyDebugMessenger() {
 
     if (func != nullptr) {
         func(m_Instance, m_DebugMessenger, nullptr);
-    }
-}
+    }}
 
 VkPhysicalDevice VKInstance::PickPhysicalDevice(VkSurfaceKHR surface) const {
     // Score each device and pick the best one
