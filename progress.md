@@ -1,7 +1,7 @@
 # HappyCat 渲染引擎 - 开发进度
 
-> 最后更新: 2026-03-03
-> 当前阶段: Phase 1 完成
+> 最后更新: 2026-03-08
+> 当前阶段: Phase 1 完成, 高优先级问题已修复
 
 ---
 
@@ -68,26 +68,29 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 
 ### 高优先级
 
-#### 1. 渲染稳定性问题
+#### 1. 渲染稳定性问题 ✅ 已修复
 - **问题**: Triangle Demo 在某些情况下可能出现同步问题
 - **影响**: 可能导致间歇性崩溃
-- **解决方案**:
-  - 改进 FrameContext 的 fence 管理策略
-  - 添加更完善的错误处理
+- **修复**: FrameContext 初始化 bug - 循环从 1 开始导致 m_FrameData[0] 未初始化
+- **提交**: `fix: FrameContext initialization bug causing crash`
 
-#### 2. 窗口大小变化处理
+#### 2. 窗口大小变化处理 ✅ 已修复
 - **问题**: 窗口 resize 时交换链重建逻辑不完整
 - **影响**: 窗口大小变化时可能崩溃
-- **解决方案**:
-  - 完善 `OnResize` 回调处理
-  - 添加 framebuffer 重建逻辑
+- **修复**:
+  - 添加最小化窗口检测 (width=0 或 height=0)
+  - SwapChain 重建移到主循环中
+  - TriangleApp::OnResize 清理旧 framebuffer
+- **提交**: `fix: window resize handling improvements`
 
-#### 3. 资源泄漏检测
+#### 3. 资源泄漏检测 ✅ 已修复
 - **问题**: 缺少系统的资源生命周期管理
 - **影响**: 长时间运行可能内存泄漏
-- **解决方案**:
-  - 添加资源追踪系统
-  - 使用 VMA (Vulkan Memory Allocator)
+- **修复**:
+  - 添加 ResourceTracker 类用于追踪资源创建/销毁
+  - 集成到 VKFence, VKSemaphore, VKCommandPool, VKCommandBuffer
+  - 程序退出时自动检测并报告泄漏
+- **提交**: `feat: add resource tracking system for leak detection`
 
 ### 中优先级
 
@@ -195,8 +198,8 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 
 | ID | 描述 | 严重程度 | 状态 |
 |----|------|----------|------|
-| BUG-001 | FrameContext fence 可能在某些情况下未正确同步 | 高 | 待修复 |
-| BUG-002 | 窗口 resize 时可能崩溃 | 高 | 待修复 |
+| BUG-001 | FrameContext fence 可能在某些情况下未正确同步 | 高 | ✅ 已修复 |
+| BUG-002 | 窗口 resize 时可能崩溃 | 高 | ✅ 已修复 |
 | BUG-003 | Validation Layer 警告: shader cache 不存在 | 低 | 可忽略 |
 
 ---
@@ -226,6 +229,19 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 ---
 
 ## 更新日志
+
+### 2026-03-08
+- ✅ 修复高优先级问题 #1: FrameContext 初始化 bug
+  - 循环从 1 开始导致 m_FrameData[0] 未初始化
+  - m_CurrentFrame 和 m_FrameNumber 初始值错误
+- ✅ 修复高优先级问题 #2: 窗口 resize 处理
+  - 添加最小化窗口检测
+  - SwapChain 重建逻辑改进
+  - Framebuffer 清理逻辑
+- ✅ 修复高优先级问题 #3: 资源泄漏检测
+  - 添加 ResourceTracker 资源追踪系统
+  - 集成到关键 Vulkan 资源类
+- ✅ 重命名 GLFWWindow 为 HCWindow
 
 ### 2026-03-03
 - ✅ 完成 Phase 1 最小可运行框架
