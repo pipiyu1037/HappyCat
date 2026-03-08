@@ -177,6 +177,12 @@ void VKSwapChain::Present(VkQueue queue, u32 imageIndex, VkSemaphore waitSemapho
 }
 
 void VKSwapChain::Recreate(u32 width, u32 height) {
+    // Don't recreate with zero size (minimized window)
+    if (width == 0 || height == 0) {
+        HC_CORE_WARN("SwapChain::Recreate called with zero size, skipping");
+        return;
+    }
+
     m_Device->WaitIdle();
 
     Cleanup();

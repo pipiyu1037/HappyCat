@@ -166,7 +166,17 @@ void TriangleApp::OnRender() {
 }
 
 void TriangleApp::OnResize(u32 width, u32 height) {
-    // Framebuffers will be recreated in OnRender
+    // Clean up old framebuffers on resize
+    VkDevice device = GetDevice()->GetHandle();
+
+    for (auto& fb : m_Framebuffers) {
+        if (fb) {
+            vkDestroyFramebuffer(device, fb, nullptr);
+        }
+    }
+    m_Framebuffers.clear();
+
+    HC_CORE_INFO("TriangleApp resized to {0}x{1}", width, height);
 }
 
 bool TriangleApp::CreateRenderPass() {

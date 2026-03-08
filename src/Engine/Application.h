@@ -57,6 +57,8 @@ private:
     ApplicationConfig m_Config;
     bool m_Running = false;
     bool m_Initialized = false;
+    bool m_Minimized = false;
+    bool m_NeedResize = false;
 
     std::unique_ptr<Window> m_Window;
     std::unique_ptr<VKInstance> m_Instance;

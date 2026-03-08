@@ -77,8 +77,14 @@ bool Application::Initialize() {
 
     // Set window callbacks
     m_Window->SetResizeCallback([this](u32 width, u32 height) {
+        // Handle window minimization
+        if (width == 0 || height == 0) {
+            m_Minimized = true;
+            return;
+        }
+        m_Minimized = false;
+        m_NeedResize = true;
         OnResize(width, height);
-        m_SwapChain->Recreate(width, height);
     });
 
     m_Window->SetCloseCallback([this]() {
@@ -125,6 +131,20 @@ void Application::Run() {
 
     while (m_Running && !m_Window->ShouldClose()) {
         m_Window->PollEvents();
+
+        // Skip rendering when minimized
+        if (m_Minimized) {
+            continue;
+        }
+
+        // Recreate swapchain if needed
+        if (m_NeedResize) {
+            m_Device->WaitIdle();
+            u32 width, height;
+            m_Window->GetFramebufferSize(width, height);
+            m_SwapChain->Recreate(width, height);
+            m_NeedResize = false;
+        }
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         f32 deltaTime = std::chrono::duration<f32, std::chrono::seconds::period>(
