@@ -1,6 +1,7 @@
 #include "VKCommandBuffer.h"
 #include "VKDevice.h"
 #include "VKCommandPool.h"
+#include "Core/Utils/ResourceTracker.h"
 
 namespace happycat {
 
@@ -9,10 +10,12 @@ std::unique_ptr<VKCommandBuffer> VKCommandBuffer::Create(VKDevice* device, VKCom
     if (!buffer->Initialize(device, pool, level)) {
         return nullptr;
     }
+    HC_TRACK_RESOURCE_DBG(buffer.get(), ResourceType::CommandBuffer, "CommandBuffer", 0);
     return buffer;
 }
 
 VKCommandBuffer::~VKCommandBuffer() {
+    HC_UNTRACK_RESOURCE_DBG(this);
     // Command buffers are freed with the pool
 }
 

@@ -1,5 +1,6 @@
 #include "VKFence.h"
 #include "VKDevice.h"
+#include "Core/Utils/ResourceTracker.h"
 
 namespace happycat {
 
@@ -8,10 +9,12 @@ std::unique_ptr<VKFence> VKFence::Create(VKDevice* device, bool signaled) {
     if (!fence->Initialize(device, signaled)) {
         return nullptr;
     }
+    HC_TRACK_RESOURCE_DBG(fence.get(), ResourceType::Fence, "Fence", 0);
     return fence;
 }
 
 VKFence::~VKFence() {
+    HC_UNTRACK_RESOURCE_DBG(this);
     if (m_Fence != VK_NULL_HANDLE) {
         vkDestroyFence(m_Device, m_Fence, nullptr);
     }

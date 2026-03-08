@@ -1,5 +1,6 @@
 #include "VKCommandPool.h"
 #include "VKDevice.h"
+#include "Core/Utils/ResourceTracker.h"
 
 namespace happycat {
 
@@ -8,10 +9,12 @@ std::unique_ptr<VKCommandPool> VKCommandPool::Create(VKDevice* device, u32 queue
     if (!pool->Initialize(device, queueFamilyIndex)) {
         return nullptr;
     }
+    HC_TRACK_RESOURCE_DBG(pool.get(), ResourceType::CommandPool, "CommandPool", 0);
     return pool;
 }
 
 VKCommandPool::~VKCommandPool() {
+    HC_UNTRACK_RESOURCE_DBG(this);
     if (m_Pool != VK_NULL_HANDLE) {
         vkDestroyCommandPool(m_Device, m_Pool, nullptr);
     }

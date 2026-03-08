@@ -6,6 +6,8 @@ add_library(HappyCatCore STATIC
     Utils/Assert.h
     Utils/Logger.h
     Utils/Logger.cpp
+    Utils/ResourceTracker.h
+    Utils/ResourceTracker.cpp
 
     # Math
     Math/MathTypes.h

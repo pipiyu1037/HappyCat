@@ -1,5 +1,6 @@
 #include "VKSemaphore.h"
 #include "VKDevice.h"
+#include "Core/Utils/ResourceTracker.h"
 
 namespace happycat {
 
@@ -8,10 +9,12 @@ std::unique_ptr<VKSemaphore> VKSemaphore::Create(VKDevice* device) {
     if (!semaphore->Initialize(device)) {
         return nullptr;
     }
+    HC_TRACK_RESOURCE_DBG(semaphore.get(), ResourceType::Semaphore, "Semaphore", 0);
     return semaphore;
 }
 
 VKSemaphore::~VKSemaphore() {
+    HC_UNTRACK_RESOURCE_DBG(this);
     if (m_Semaphore != VK_NULL_HANDLE) {
         vkDestroySemaphore(m_Device, m_Semaphore, nullptr);
     }
