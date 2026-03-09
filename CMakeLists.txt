@@ -47,6 +47,9 @@ message(STATUS "Vulkan SDK: ${VULKAN_SDK}")
 message(STATUS "Vulkan Include: ${Vulkan_INCLUDE_DIR}")
 message(STATUS "Vulkan Library: ${Vulkan_LIBRARY}")
 
+# Set CMAKE_PREFIX_PATH to find packages in Vulkan SDK
+list(APPEND CMAKE_PREFIX_PATH "${VULKAN_SDK}/Lib/cmake")
+
 # Third-party dependencies
 include(${CMAKE_CURRENT_SOURCE_DIR}/third_party/HappyCatDeps.cmake)
 
