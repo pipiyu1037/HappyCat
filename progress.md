@@ -1,6 +1,6 @@
 # HappyCat 渲染引擎 - 开发进度
 
-> 最后更新: 2026-03-08
+> 最后更新: 2026-03-10
 > 当前阶段: Phase 1 完成, 高优先级问题已修复
 
 ---
@@ -201,6 +201,7 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 | BUG-001 | FrameContext fence 可能在某些情况下未正确同步 | 高 | ✅ 已修复 |
 | BUG-002 | 窗口 resize 时可能崩溃 | 高 | ✅ 已修复 |
 | BUG-003 | Validation Layer 警告: shader cache 不存在 | 低 | 可忽略 |
+| BUG-004 | Vulkan SDK 1.4.341.1 SPIRV-Tools CMake 配置路径错误 | 高 | ✅ 已修复 |
 
 ---
 
@@ -229,6 +230,16 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 ---
 
 ## 更新日志
+
+### 2026-03-10
+- ✅ 修复 Vulkan SDK 1.4.341.1 SPIRV-Tools CMake 配置 bug
+  - SDK 中 SPIRV-Tools CMake 配置路径计算错误导致 find_package 失败
+  - 解决方案: 注释掉 HappyCatDeps.cmake 中未使用的 glslang/spirv-cross 依赖
+  - 着色器已预编译为 .spv，运行时无需这些库
+- ✅ 验证 TriangleDemo 在 RTX 4060 Laptop GPU 上正常运行
+  - 构建成功 (Release 配置)
+  - 窗口创建、Vulkan 初始化、渲染循环均正常
+  - 窗口 resize 事件正确处理
 
 ### 2026-03-08
 - ✅ 修复高优先级问题 #1: FrameContext 初始化 bug

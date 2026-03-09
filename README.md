@@ -13,7 +13,7 @@ A modern Vulkan-based rendering engine with Render Graph architecture.
 
 - **CMake** 3.20+
 - **C++17** compatible compiler
-- **Vulkan SDK** 1.3+
+- **Vulkan SDK** 1.3+ (tested with 1.4.341.1)
 
 ### Windows
 - Visual Studio 2022 or later
@@ -86,11 +86,13 @@ HappyCat/
 | glm | 1.0.1 | Math library |
 | spdlog | 1.14.1 | Logging |
 | Dear ImGui | docking | Debug UI |
-| glslang | 14.3.0 | Shader compilation |
-| SPIRV-Cross | 1.3.290.0 | Shader reflection |
+| glslang | 14.3.0 | Shader compilation (disabled¹) |
+| SPIRV-Cross | 1.3.290.0 | Shader reflection (disabled¹) |
 | stb | latest | Image loading |
 | tinyobjloader | 2.0.0 | OBJ loading |
 | tinygltf | 2.9.2 | GLTF loading |
+
+> ¹ glslang/SPIRV-Cross are currently disabled due to a CMake configuration bug in Vulkan SDK 1.4.341.1. Shaders are precompiled, so runtime compilation is not needed.
 
 ## License
 

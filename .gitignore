@@ -43,6 +43,7 @@ cmake_install.cmake
 Makefile
 *.cmake
 !CMakeLists.txt
+!third_party/HappyCatDeps.cmake
 
 # Dependencies (third-party libraries are downloaded, not committed)
 third_party/glfw/
@@ -55,11 +56,10 @@ third_party/tinygltf/
 third_party/glslang/
 third_party/spirv-cross/
 
-# Shader cache and compiled shaders (keep source, ignore compiled)
-*.spv
+# Shader cache (keep precompiled .spv for samples)
 *.spvasm
-shaders/**/*.spv
 shaders/**/*.spvasm
+# Note: .spv files are kept for samples to work out of the box
 
 # Logs and temporary files
 *.log
