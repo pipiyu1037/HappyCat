@@ -15,6 +15,10 @@ public:
         VKDevice* device,
         const std::vector<char>& code);
 
+    static std::unique_ptr<VKShaderModule> Create(
+        VKDevice* device,
+        const std::vector<u32>& spirv);
+
     ~VKShaderModule();
 
     VkShaderModule GetHandle() const { return m_Module; }

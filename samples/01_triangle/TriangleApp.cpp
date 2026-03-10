@@ -2,6 +2,7 @@
 #include "RHI/Vulkan/VKDevice.h"
 #include "RHI/Vulkan/VKSwapChain.h"
 #include "RHI/Vulkan/VKPipeline.h"
+#include "RHI/Vulkan/VKCommandBuffer.h"
 #include "Engine/FrameContext.h"
 #include "Core/Utils/Logger.h"
 
@@ -93,12 +94,13 @@ void TriangleApp::OnRender() {
 
     // Record command buffer
     auto cmd = frameCtx->GetCurrentCommandBuffer();
-    vkResetCommandBuffer(cmd, 0);
+    VkCommandBuffer vkCmd = cmd->GetHandle();
+    vkResetCommandBuffer(vkCmd, 0);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    vkBeginCommandBuffer(cmd, &beginInfo);
+    vkBeginCommandBuffer(vkCmd, &beginInfo);
 
     // Begin render pass
     VkRenderPassBeginInfo renderPassInfo{};
@@ -112,10 +114,10 @@ void TriangleApp::OnRender() {
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-    vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(vkCmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     // Bind pipeline
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+    vkCmdBindPipeline(vkCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 
     // Set viewport
     VkViewport viewport{};
@@ -125,21 +127,21 @@ void TriangleApp::OnRender() {
     viewport.height = static_cast<f32>(swapChain->GetExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
+    vkCmdSetViewport(vkCmd, 0, 1, &viewport);
 
     // Set scissor
     VkRect2D scissor{};
     scissor.offset = {0, 0};
     scissor.extent = swapChain->GetExtent();
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
+    vkCmdSetScissor(vkCmd, 0, 1, &scissor);
 
     // Draw triangle
-    vkCmdDraw(cmd, 3, 1, 0, 0);
+    vkCmdDraw(vkCmd, 3, 1, 0, 0);
 
     // End render pass
-    vkCmdEndRenderPass(cmd);
+    vkCmdEndRenderPass(vkCmd);
 
-    vkEndCommandBuffer(cmd);
+    vkEndCommandBuffer(vkCmd);
 
     // Submit with proper synchronization
     VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -152,7 +154,7 @@ void TriangleApp::OnRender() {
     submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
     submitInfo.pWaitDstStageMask = &waitStages;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &cmd;
+    submitInfo.pCommandBuffers = &vkCmd;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
 

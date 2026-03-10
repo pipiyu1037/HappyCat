@@ -13,6 +13,9 @@ class VKFence;
 class VKCommandPool;
 class VKCommandBuffer;
 
+// Forward declaration for VKCommandBuffer wrapper
+class VKCommandBuffer;
+
 class FrameContext {
 public:
     // Create with enough resources for both frames in flight and swapchain images
@@ -38,7 +41,7 @@ public:
     VkFence GetRenderFence() const;
 
     // Command buffer
-    VkCommandBuffer GetCurrentCommandBuffer() const;
+    VKCommandBuffer* GetCurrentCommandBuffer() const;
 
 private:
     struct FrameData {

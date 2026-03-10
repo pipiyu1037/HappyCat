@@ -31,8 +31,8 @@ private:
 // Dependency builder - used in DeclareDependencies()
 class DependencyBuilder {
 public:
-    DependencyBuilder(RenderGraphBuilder* graph, RenderPass* pass)
-        : m_Graph(graph), m_Pass(pass) {}
+    DependencyBuilder(RenderGraphBuilder* graph, RenderPass* pass, u32 passIndex)
+        : m_Graph(graph), m_Pass(pass), m_PassIndex(passIndex) {}
 
     // Read resource
     void Read(TextureHandle texture);
@@ -52,6 +52,7 @@ public:
 private:
     RenderGraphBuilder* m_Graph;
     RenderPass* m_Pass;
+    u32 m_PassIndex;
 };
 
 } // namespace happycat

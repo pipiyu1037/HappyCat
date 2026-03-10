@@ -76,8 +76,8 @@ VkFence FrameContext::GetRenderFence() const {
     return m_FrameData[m_CurrentFrame].renderFence->GetHandle();
 }
 
-VkCommandBuffer FrameContext::GetCurrentCommandBuffer() const {
-    return m_FrameData[m_CurrentFrame].commandBuffer->GetHandle();
+VKCommandBuffer* FrameContext::GetCurrentCommandBuffer() const {
+    return m_FrameData[m_CurrentFrame].commandBuffer.get();
 }
 
 } // namespace happycat
