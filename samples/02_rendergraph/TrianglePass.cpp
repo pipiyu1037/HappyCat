@@ -3,6 +3,7 @@
 #include "RHI/Vulkan/VKSwapChain.h"
 #include "RHI/Vulkan/VKCommandBuffer.h"
 #include "Core/Utils/Logger.h"
+#include "Renderer/Shader/ShaderCompiler.h"
 
 #include <fstream>
 
@@ -126,27 +127,42 @@ bool TrianglePass::CreatePipeline() {
         return false;
     }
 
-    // Load shaders
-    auto readFile = [](const std::string& filename) -> std::vector<char> {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
-        if (!file.is_open()) {
-            HC_CORE_ERROR("Failed to open shader file: {0}", filename);
+    // Load shaders using runtime compilation
+    auto loadOrCompileShader = [](const std::string& basePath, ShaderStage stage) -> std::vector<u32> {
+        // Try loading precompiled SPIR-V first
+        std::string spvPath = basePath + ".spv";
+        auto spirv = ShaderCompiler::LoadSpirV(spvPath);
+        if (!spirv.empty()) {
+            HC_CORE_INFO("Loaded precompiled shader: {0}", spvPath);
+            return spirv;
+        }
+
+        // Fall back to runtime compilation from GLSL source
+        HC_CORE_TRACE("No SPIR-V found, compiling from source: {0}", basePath);
+
+        auto* compiler = ShaderCompilerManager::Get();
+        if (!compiler) {
+            HC_CORE_ERROR("Shader compiler not initialized");
             return {};
         }
-        size_t size = file.tellg();
-        file.seekg(0);
-        std::vector<char> buffer(size);
-        file.read(buffer.data(), size);
-        return buffer;
+
+        ShaderCompileResult result = compiler->CompileFromFile(basePath, stage);
+        if (!result.success) {
+            HC_CORE_ERROR("Failed to compile shader '{0}': {1}", basePath, result.errorMessage);
+            return {};
+        }
+
+        HC_CORE_INFO("Compiled shader: {0} ({1} bytes)", basePath, result.spirv.size() * 4);
+        return result.spirv;
     };
 
-    auto createShaderModule = [device](const std::vector<char>& code) -> VkShaderModule {
-        if (code.empty()) return VK_NULL_HANDLE;
+    auto createShaderModule = [device](const std::vector<u32>& spirv) -> VkShaderModule {
+        if (spirv.empty()) return VK_NULL_HANDLE;
 
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+        createInfo.codeSize = spirv.size() * sizeof(u32);
+        createInfo.pCode = spirv.data();
 
         VkShaderModule shaderModule;
         if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
@@ -155,11 +171,11 @@ bool TrianglePass::CreatePipeline() {
         return shaderModule;
     };
 
-    auto vertCode = readFile("shaders/triangle/triangle.vert.spv");
-    auto fragCode = readFile("shaders/triangle/triangle.frag.spv");
+    auto vertSpirv = loadOrCompileShader("shaders/triangle/triangle.vert", ShaderStage::Vertex);
+    auto fragSpirv = loadOrCompileShader("shaders/triangle/triangle.frag", ShaderStage::Fragment);
 
-    VkShaderModule vertModule = createShaderModule(vertCode);
-    VkShaderModule fragModule = createShaderModule(fragCode);
+    VkShaderModule vertModule = createShaderModule(vertSpirv);
+    VkShaderModule fragModule = createShaderModule(fragSpirv);
 
     if (!vertModule || !fragModule) {
         HC_CORE_ERROR("Failed to create shader modules");
@@ -167,6 +183,7 @@ bool TrianglePass::CreatePipeline() {
         if (fragModule) vkDestroyShaderModule(device, fragModule, nullptr);
         return false;
     }
+    HC_CORE_INFO("Shaders loaded successfully");
 
     VkPipelineShaderStageCreateInfo shaderStages[2]{};
     shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

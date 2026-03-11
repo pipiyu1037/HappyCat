@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "Core/Utils/Types.h"
+#include "RHI/RHITypes.h"
 
 namespace happycat {
 

@@ -2,6 +2,7 @@
 
 #include "Engine/Application.h"
 #include "Renderer/RenderGraph/RenderGraphBuilder.h"
+#include "RHI/RHITypes.h"
 #include <memory>
 
 namespace happycat {
@@ -23,8 +24,8 @@ private:
     bool CreateRenderPass();
 
     // Helper functions
-    static std::vector<char> ReadShaderFile(const std::string& filename);
-    static VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char>& code);
+    static std::vector<u32> LoadOrCompileShader(const std::string& basePath, ShaderStage stage);
+    static VkShaderModule CreateShaderModuleFromSpirv(VkDevice device, const std::vector<u32>& spirv);
 
     // Vulkan objects
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;

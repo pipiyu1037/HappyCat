@@ -5,6 +5,7 @@
 #include "RHI/Vulkan/VKSwapChain.h"
 #include "FrameContext.h"
 #include "Core/Utils/Logger.h"
+#include "Renderer/Shader/ShaderCompiler.h"
 
 #include <chrono>
 
@@ -76,6 +77,9 @@ bool Application::Initialize() {
     m_FrameContext = std::make_unique<FrameContext>(m_Device.get(), m_Config.framesInFlight,
                                                       m_SwapChain->GetImageCount());
 
+    // Initialize shader compiler for runtime GLSL compilation
+    ShaderCompilerManager::Initialize();
+
     // Set window callbacks
     m_Window->SetResizeCallback([this](u32 width, u32 height) {
         // Handle window minimization
@@ -108,6 +112,9 @@ void Application::Shutdown() {
     OnShutdown();
 
     m_Device->WaitIdle();
+
+    // Shutdown shader compiler
+    ShaderCompilerManager::Shutdown();
 
     m_FrameContext.reset();
     m_SwapChain.reset();

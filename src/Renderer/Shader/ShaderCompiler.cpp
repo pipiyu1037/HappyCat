@@ -4,10 +4,8 @@
 #include <fstream>
 #include <sstream>
 
-// glslang headers
-#include <glslang/Public/ShaderLang.h>
-#include <glslang/Public/ResourceLimits.h>
-#include <glslang/SPIRV/GlslangToSpv.h>
+// shaderc headers
+#include <shaderc/shaderc.hpp>
 
 namespace happycat {
 
@@ -36,10 +34,7 @@ ShaderCompiler::ShaderCompiler() {
 }
 
 ShaderCompiler::~ShaderCompiler() {
-    if (m_Initialized) {
-        glslang::FinalizeProcess();
-        m_Initialized = false;
-    }
+    m_Initialized = false;
 }
 
 bool ShaderCompiler::Initialize() {
@@ -47,23 +42,18 @@ bool ShaderCompiler::Initialize() {
         return true;
     }
 
-    if (!glslang::InitializeProcess()) {
-        HC_CORE_ERROR("Failed to initialize glslang process");
-        return false;
-    }
-
     m_Initialized = true;
-    HC_CORE_INFO("Shader compiler initialized");
+    HC_CORE_INFO("Shader compiler initialized (using shaderc)");
     return true;
 }
 
-EShLanguage GetShLanguage(ShaderStage stage) {
+shaderc_shader_kind GetShadercKind(ShaderStage stage) {
     switch (stage) {
-        case ShaderStage::Vertex:    return EShLangVertex;
-        case ShaderStage::Fragment:  return EShLangFragment;
-        case ShaderStage::Compute:   return EShLangCompute;
-        case ShaderStage::Geometry:  return EShLangGeometry;
-        default:                         return EShLangVertex;
+        case ShaderStage::Vertex:    return shaderc_vertex_shader;
+        case ShaderStage::Fragment:  return shaderc_fragment_shader;
+        case ShaderStage::Compute:   return shaderc_compute_shader;
+        case ShaderStage::Geometry:  return shaderc_geometry_shader;
+        default:                     return shaderc_vertex_shader;
     }
 }
 
@@ -75,66 +65,26 @@ ShaderCompileResult ShaderCompiler::Compile(const ShaderSource& source) {
         return result;
     }
 
-    EShLanguage shLang = GetShLanguage(source.stage);
-    glslang::TShader shader(shLang);
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
 
-    const char* sourceStr = source.sourceCode.c_str();
-    const int sourceLen = static_cast<int>(source.sourceCode.length());
-    const char* filePath = source.filePath.c_str();
+    // Set target environment to Vulkan SPIR-V
+    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+    options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
-    shader.setStringsWithLengthsAndNames(&sourceStr, &sourceLen, &filePath, 1);
+    shaderc_shader_kind kind = GetShadercKind(source.stage);
+    shaderc::SpvCompilationResult spvResult = compiler.CompileGlslToSpv(
+        source.sourceCode, kind, source.filePath.c_str(), options);
 
-    // Set Vulkan SPIR-V target
-    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
-
-    // Get default resources
-    const TBuiltInResource* resources = GetDefaultResources();
-
-    // Parse
-    EShMessages messages = static_cast<EShMessages>(
-        EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault
-    );
-
-    if (!shader.parse(resources, 450, false, messages)) {
-        std::ostringstream oss;
-        oss << "Shader parse error in " << source.filePath << ":\n";
-        oss << shader.getInfoLog() << "\n";
-        oss << shader.getInfoDebugLog();
-        result.errorMessage = oss.str();
+    if (spvResult.GetCompilationStatus() != shaderc_compilation_status_success) {
+        result.errorMessage = "Shader compilation error in " + source.filePath + ":\n" +
+                              spvResult.GetErrorMessage();
         HC_CORE_ERROR("{0}", result.errorMessage);
         return result;
     }
 
-    // Link into program
-    glslang::TProgram program;
-    program.addShader(&shader);
-
-    if (!program.link(messages)) {
-        std::ostringstream oss;
-        oss << "Shader link error in " << source.filePath << ":\n";
-        oss << program.getInfoLog() << "\n";
-        oss << program.getInfoDebugLog();
-        result.errorMessage = oss.str();
-        HC_CORE_ERROR("{0}", result.errorMessage);
-        return result;
-    }
-
-    // Generate SPIR-V
-    spv::SpvBuildLogger spvLogger;
-    glslang::SpvOptions spvOptions;
-    spvOptions.generateDebugInfo = false;
-    spvOptions.disableOptimizer = false;
-    spvOptions.optimizeSize = true;
-
-    glslang::GlslangToSpv(*program.getIntermediate(shLang), result.spirv, &spvLogger, &spvOptions);
-
-    std::string spvMessages = spvLogger.getAllMessages();
-    if (!spvMessages.empty()) {
-        HC_CORE_WARN("SPIR-V generation warnings: {0}", spvMessages);
-    }
-
+    result.spirv.assign(spvResult.cbegin(), spvResult.cend());
     result.success = true;
-    HC_CORE_INFO("Compiled shader: {0} ({1} bytes)", source.filePath, result.spirv.size() * 4);
     return result;
 }
 
@@ -181,7 +131,7 @@ bool ShaderCompiler::IsSpirVFile(const std::string& filePath) {
 std::vector<u32> ShaderCompiler::LoadSpirV(const std::string& filePath) {
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        HC_CORE_ERROR("Failed to open SPIR-V file: {0}", filePath);
+        // Silent return - caller will decide whether to compile from source
         return {};
     }
 
@@ -190,7 +140,7 @@ std::vector<u32> ShaderCompiler::LoadSpirV(const std::string& filePath) {
 
     // SPIR-V must be aligned to 4 bytes
     if (size % 4 != 0) {
-        HC_CORE_ERROR("SPIR-V file size not aligned: {0}", filePath);
+        HC_CORE_WARN("SPIR-V file size not aligned: {0}", filePath);
         return {};
     }
 

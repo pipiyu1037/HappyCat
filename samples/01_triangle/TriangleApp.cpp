@@ -5,6 +5,7 @@
 #include "RHI/Vulkan/VKCommandBuffer.h"
 #include "Engine/FrameContext.h"
 #include "Core/Utils/Logger.h"
+#include "Renderer/Shader/ShaderCompiler.h"
 
 #include <fstream>
 #include <vector>
@@ -238,20 +239,23 @@ bool TriangleApp::CreateRenderPass() {
         return false;
     }
 
-    // Load shaders
-    auto vertCode = ReadShaderFile("shaders/triangle/triangle.vert.spv");
-    auto fragCode = ReadShaderFile("shaders/triangle/triangle.frag.spv");
+    // Load shaders - use runtime compilation from GLSL source
+    auto vertSpirv = LoadOrCompileShader("shaders/triangle/triangle.vert", ShaderStage::Vertex);
+    auto fragSpirv = LoadOrCompileShader("shaders/triangle/triangle.frag", ShaderStage::Fragment);
 
-    // If SPIR-V not found, try source compilation (for development)
-    // For now, we'll use glslangValidator to compile offline
+    if (vertSpirv.empty() || fragSpirv.empty()) {
+        HC_CORE_ERROR("Failed to load/compile shaders");
+        return false;
+    }
 
-    VkShaderModule vertModule = CreateShaderModule(device, vertCode);
-    VkShaderModule fragModule = CreateShaderModule(device, fragCode);
+    VkShaderModule vertModule = CreateShaderModuleFromSpirv(device, vertSpirv);
+    VkShaderModule fragModule = CreateShaderModuleFromSpirv(device, fragSpirv);
 
     if (!vertModule || !fragModule) {
         HC_CORE_ERROR("Failed to create shader modules");
         return false;
     }
+    HC_CORE_INFO("Shaders loaded successfully");
 
     VkPipelineShaderStageCreateInfo shaderStages[2]{};
     shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -343,26 +347,41 @@ bool TriangleApp::CreateRenderPass() {
     return true;
 }
 
-std::vector<char> TriangleApp::ReadShaderFile(const std::string& filename) {
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
-    if (!file.is_open()) {
-        HC_CORE_ERROR("Failed to open shader file: {0}", filename);
+std::vector<u32> TriangleApp::LoadOrCompileShader(const std::string& basePath, ShaderStage stage) {
+    // Try loading precompiled SPIR-V first
+    std::string spvPath = basePath + ".spv";
+    auto spirv = ShaderCompiler::LoadSpirV(spvPath);
+    if (!spirv.empty()) {
+        HC_CORE_INFO("Loaded precompiled shader: {0}", spvPath);
+        return spirv;
+    }
+
+    // Fall back to runtime compilation from GLSL source
+    HC_CORE_TRACE("No SPIR-V found, compiling from source: {0}", basePath);
+
+    auto* compiler = ShaderCompilerManager::Get();
+    if (!compiler) {
+        HC_CORE_ERROR("Shader compiler not initialized");
         return {};
     }
-    size_t size = file.tellg();
-    file.seekg(0);
-    std::vector<char> buffer(size);
-    file.read(buffer.data(), size);
-    return buffer;
+
+    ShaderCompileResult result = compiler->CompileFromFile(basePath, stage);
+    if (!result.success) {
+        HC_CORE_ERROR("Failed to compile shader '{0}': {1}", basePath, result.errorMessage);
+        return {};
+    }
+
+    HC_CORE_INFO("Compiled shader: {0} ({1} bytes)", basePath, result.spirv.size() * 4);
+    return result.spirv;
 }
 
-VkShaderModule TriangleApp::CreateShaderModule(VkDevice device, const std::vector<char>& code) {
-    if (code.empty()) return VK_NULL_HANDLE;
+VkShaderModule TriangleApp::CreateShaderModuleFromSpirv(VkDevice device, const std::vector<u32>& spirv) {
+    if (spirv.empty()) return VK_NULL_HANDLE;
 
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    createInfo.codeSize = spirv.size() * sizeof(u32);
+    createInfo.pCode = spirv.data();
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {

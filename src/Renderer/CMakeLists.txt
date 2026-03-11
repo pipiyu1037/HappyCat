@@ -34,16 +34,21 @@ target_include_directories(HappyCatRenderer PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Use shaderc shared library (DLL) to avoid MSVC version incompatibility issues
+# with static libraries from Vulkan SDK
 target_link_libraries(HappyCatRenderer PUBLIC
     HappyCatCore
     HappyCatRHI
-
-    # Link glslang libraries from Vulkan SDK using absolute paths
-    "${VULKAN_SDK}/Lib/glslang.lib"
-    "${VULKAN_SDK}/Lib/SPIRV.lib"
-    "${VULKAN_SDK}/Lib/SPIRV-Tools.lib"
-    "${VULKAN_SDK}/Lib/SPIRV-Tools-opt.lib"
-    "${VULKAN_SDK}/Lib/glslang-default-resource-limits.lib"
+    "${VULKAN_SDK}/Lib/shaderc_shared.lib"
 )
+
+# Copy shaderc DLL to output directory
+if(EXISTS "${VULKAN_SDK}/Bin/shaderc_shared.dll")
+    add_custom_command(TARGET HappyCatRenderer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VULKAN_SDK}/Bin/shaderc_shared.dll"
+        "$<TARGET_FILE_DIR:HappyCatRenderer>"
+    )
+endif()
 
 set_target_properties(HappyCatRenderer PROPERTIES FOLDER "HappyCat/Modules")
