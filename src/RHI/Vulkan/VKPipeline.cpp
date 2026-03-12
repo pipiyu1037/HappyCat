@@ -1,5 +1,6 @@
 #include "VKPipeline.h"
 #include "VKDevice.h"
+#include "VKDescriptorSetLayout.h"
 #include "VKShaderModule.h"
 
 #include <fstream>
@@ -7,7 +8,6 @@
 
 namespace happycat {
 
-// Helper to read shader file
 static std::vector<char> ReadFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
@@ -23,9 +23,15 @@ static std::vector<char> ReadFile(const std::string& filename) {
     return buffer;
 }
 
-std::unique_ptr<VKPipelineLayout> VKPipelineLayout::Create(VKDevice* device) {
+// VKPipelineLayout implementation
+
+std::unique_ptr<VKPipelineLayout> VKPipelineLayout::Create(
+    VKDevice* device,
+    const PipelineLayoutDesc& desc)
+{
     auto layout = std::unique_ptr<VKPipelineLayout>(new VKPipelineLayout());
-    if (!layout->Initialize(device)) {
+    if (!layout->Initialize(device, desc)) {
+        HC_CORE_ERROR("Failed to create VKPipelineLayout");
         return nullptr;
     }
     return layout;
@@ -37,25 +43,38 @@ VKPipelineLayout::~VKPipelineLayout() {
     }
 }
 
-bool VKPipelineLayout::Initialize(VKDevice* device) {
+bool VKPipelineLayout::Initialize(VKDevice* device, const PipelineLayoutDesc& desc) {
     m_Device = device->GetHandle();
+
+    std::vector<VkDescriptorSetLayout> setLayoutHandles;
+    setLayoutHandles.reserve(desc.setLayouts.size());
+    for (auto* setLayout : desc.setLayouts) {
+        if (setLayout) {
+            setLayoutHandles.push_back(setLayout->GetHandle());
+        }
+    }
 
     VkPipelineLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    createInfo.setLayoutCount = 0;
-    createInfo.pushConstantRangeCount = 0;
+    createInfo.setLayoutCount = static_cast<u32>(setLayoutHandles.size());
+    createInfo.pSetLayouts = setLayoutHandles.empty() ? nullptr : setLayoutHandles.data();
+    createInfo.pushConstantRangeCount = static_cast<u32>(desc.pushConstantRanges.size());
+    createInfo.pPushConstantRanges = desc.pushConstantRanges.empty() ? nullptr : desc.pushConstantRanges.data();
 
     VK_CHECK(vkCreatePipelineLayout(m_Device, &createInfo, nullptr, &m_Layout));
     return true;
 }
 
+// VKPipeline implementation
+
 std::unique_ptr<VKPipeline> VKPipeline::Create(
     VKDevice* device,
     VkRenderPass renderPass,
-    const GraphicsPipelineDesc& desc)
+    const GraphicsPipelineDesc& desc,
+    VKPipelineLayout* pipelineLayout)
 {
     auto pipeline = std::unique_ptr<VKPipeline>(new VKPipeline());
-    if (!pipeline->Initialize(device, renderPass, desc)) {
+    if (!pipeline->Initialize(device, renderPass, desc, pipelineLayout)) {
         return nullptr;
     }
     return pipeline;
@@ -65,13 +84,30 @@ VKPipeline::~VKPipeline() {
     if (m_Pipeline != VK_NULL_HANDLE) {
         vkDestroyPipeline(m_Device, m_Pipeline, nullptr);
     }
-    if (m_Layout != VK_NULL_HANDLE) {
+    if (m_OwnsLayout && m_Layout != VK_NULL_HANDLE) {
         vkDestroyPipelineLayout(m_Device, m_Layout, nullptr);
     }
 }
 
-bool VKPipeline::Initialize(VKDevice* device, VkRenderPass renderPass, const GraphicsPipelineDesc& desc) {
+bool VKPipeline::Initialize(
+    VKDevice* device,
+    VkRenderPass renderPass,
+    const GraphicsPipelineDesc& desc,
+    VKPipelineLayout* pipelineLayout)
+{
     m_Device = device->GetHandle();
+
+    // Handle pipeline layout
+    if (pipelineLayout) {
+        m_Layout = pipelineLayout->GetHandle();
+        m_OwnsLayout = false;
+    } else {
+        // Create empty layout
+        VkPipelineLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        VK_CHECK(vkCreatePipelineLayout(m_Device, &layoutInfo, nullptr, &m_Layout));
+        m_OwnsLayout = true;
+    }
 
     // Read shaders
     auto vertCode = ReadFile(desc.vertexShader);
@@ -110,9 +146,39 @@ bool VKPipeline::Initialize(VKDevice* device, VkRenderPass renderPass, const Gra
     shaderStages[1].module = fragModule;
     shaderStages[1].pName = "main";
 
-    // Vertex input state (empty for hardcoded vertices)
+    // Vertex input state
+    std::vector<VkVertexInputBindingDescription> vertexBindings;
+    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
+
+    if (!desc.vertexBindings.empty()) {
+        vertexBindings.reserve(desc.vertexBindings.size());
+        for (const auto& binding : desc.vertexBindings) {
+            VkVertexInputBindingDescription vkBinding{};
+            vkBinding.binding = binding.binding;
+            vkBinding.stride = binding.stride;
+            vkBinding.inputRate = binding.inputRate;
+            vertexBindings.push_back(vkBinding);
+        }
+    }
+
+    if (!desc.vertexAttributes.empty()) {
+        vertexAttributes.reserve(desc.vertexAttributes.size());
+        for (const auto& attr : desc.vertexAttributes) {
+            VkVertexInputAttributeDescription vkAttr{};
+            vkAttr.location = attr.location;
+            vkAttr.binding = attr.binding;
+            vkAttr.format = ToVkFormat(attr.format);
+            vkAttr.offset = attr.offset;
+            vertexAttributes.push_back(vkAttr);
+        }
+    }
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = static_cast<u32>(vertexBindings.size());
+    vertexInputInfo.pVertexBindingDescriptions = vertexBindings.empty() ? nullptr : vertexBindings.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<u32>(vertexAttributes.size());
+    vertexInputInfo.pVertexAttributeDescriptions = vertexAttributes.empty() ? nullptr : vertexAttributes.data();
 
     // Input assembly
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -149,7 +215,7 @@ bool VKPipeline::Initialize(VKDevice* device, VkRenderPass renderPass, const Gra
     colorBlendAttachment.dstAlphaBlendFactor = desc.dstAlphaBlendFactor;
     colorBlendAttachment.alphaBlendOp = desc.alphaBlendOp;
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                                VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+                                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -169,12 +235,6 @@ bool VKPipeline::Initialize(VKDevice* device, VkRenderPass renderPass, const Gra
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = 2;
     dynamicState.pDynamicStates = dynamicStates;
-
-    // Pipeline layout
-    VkPipelineLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-
-    VK_CHECK(vkCreatePipelineLayout(m_Device, &layoutInfo, nullptr, &m_Layout));
 
     // Create graphics pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo{};

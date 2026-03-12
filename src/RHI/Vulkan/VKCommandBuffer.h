@@ -26,12 +26,33 @@ public:
     void End();
     void Reset();
 
-    // Drawing commands
+    // Render pass commands
     void BeginRenderPass(const VkRenderPassBeginInfo& beginInfo, VkSubpassContents contents);
     void EndRenderPass();
+
+    // Pipeline commands
     void BindPipeline(VkPipelineBindPoint bindPoint, VkPipeline pipeline);
+
+    // Descriptor set commands
+    void BindDescriptorSets(
+        VkPipelineBindPoint bindPoint,
+        VkPipelineLayout layout,
+        u32 firstSet,
+        const std::vector<VkDescriptorSet>& descriptorSets,
+        const std::vector<u32>& dynamicOffsets = {});
+
+    // Vertex/Index buffer commands
+    void BindVertexBuffers(u32 firstBinding, const std::vector<VkBuffer>& buffers, const std::vector<VkDeviceSize>& offsets);
+    void BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType);
+
+    // Push constants
+    void PushConstants(VkPipelineLayout layout, VkShaderStageFlags stageFlags, u32 offset, u32 size, const void* data);
+
+    // Viewport/Scissor
     void SetViewport(u32 firstViewport, const std::vector<VkViewport>& viewports);
     void SetScissor(u32 firstScissor, const std::vector<VkRect2D>& scissors);
+
+    // Drawing commands
     void Draw(u32 vertexCount, u32 instanceCount, u32 firstVertex, u32 firstInstance);
     void DrawIndexed(u32 indexCount, u32 instanceCount, u32 firstIndex, i32 vertexOffset, u32 firstInstance);
 

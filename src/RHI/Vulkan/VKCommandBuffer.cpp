@@ -64,6 +64,51 @@ void VKCommandBuffer::BindPipeline(VkPipelineBindPoint bindPoint, VkPipeline pip
     vkCmdBindPipeline(m_Buffer, bindPoint, pipeline);
 }
 
+void VKCommandBuffer::BindDescriptorSets(
+    VkPipelineBindPoint bindPoint,
+    VkPipelineLayout layout,
+    u32 firstSet,
+    const std::vector<VkDescriptorSet>& descriptorSets,
+    const std::vector<u32>& dynamicOffsets)
+{
+    vkCmdBindDescriptorSets(
+        m_Buffer,
+        bindPoint,
+        layout,
+        firstSet,
+        static_cast<u32>(descriptorSets.size()),
+        descriptorSets.data(),
+        static_cast<u32>(dynamicOffsets.size()),
+        dynamicOffsets.empty() ? nullptr : dynamicOffsets.data());
+}
+
+void VKCommandBuffer::BindVertexBuffers(
+    u32 firstBinding,
+    const std::vector<VkBuffer>& buffers,
+    const std::vector<VkDeviceSize>& offsets)
+{
+    vkCmdBindVertexBuffers(
+        m_Buffer,
+        firstBinding,
+        static_cast<u32>(buffers.size()),
+        buffers.data(),
+        offsets.data());
+}
+
+void VKCommandBuffer::BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) {
+    vkCmdBindIndexBuffer(m_Buffer, buffer, offset, indexType);
+}
+
+void VKCommandBuffer::PushConstants(
+    VkPipelineLayout layout,
+    VkShaderStageFlags stageFlags,
+    u32 offset,
+    u32 size,
+    const void* data)
+{
+    vkCmdPushConstants(m_Buffer, layout, stageFlags, offset, size, data);
+}
+
 void VKCommandBuffer::SetViewport(u32 firstViewport, const std::vector<VkViewport>& viewports) {
     vkCmdSetViewport(m_Buffer, firstViewport, static_cast<u32>(viewports.size()), viewports.data());
 }

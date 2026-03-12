@@ -49,7 +49,7 @@ bool VKBuffer::Initialize(
     VkMemoryRequirements memReqs{};
     vkGetBufferMemoryRequirements(m_Device, m_Buffer, &memReqs);
 
-    VkMemoryAllocateInfo allocInfo{};
+    VkMemoryAllocateInfo allocInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
     allocInfo.allocationSize = memReqs.size;
     allocInfo.memoryTypeIndex = device->FindMemoryType(memReqs.memoryTypeBits, memoryFlags);
 

@@ -39,6 +39,14 @@ add_library(HappyCatRHI STATIC
     Vulkan/VKRenderPass.cpp
     Vulkan/VKFramebuffer.h
     Vulkan/VKFramebuffer.cpp
+    Vulkan/VKSampler.h
+    Vulkan/VKSampler.cpp
+    Vulkan/VKDescriptorSetLayout.h
+    Vulkan/VKDescriptorSetLayout.cpp
+    Vulkan/VKDescriptorPool.h
+    Vulkan/VKDescriptorPool.cpp
+    Vulkan/VKDescriptorSet.h
+    Vulkan/VKDescriptorSet.cpp
 )
 
 target_include_directories(HappyCatRHI PUBLIC

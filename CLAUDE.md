@@ -125,6 +125,34 @@ src/
 
 ## Current Status
 
-Phase 1: Minimal runnable framework with Triangle rendering test.
-- Core, RHI basics, Platform, Engine, and RenderGraph modules are implemented
-- Triangle sample in `samples/01_triangle/`
+Phase 1: Minimal runnable framework - **COMPLETED**
+
+### Completed Modules
+- **Core**: Base types, logging (spdlog), math (GLM), threading (ThreadPool)
+- **RHI/Vulkan**: Full Vulkan 1.3 wrappers (Instance, Device, Queue, SwapChain, Pipeline, etc.)
+- **Renderer/RenderGraph**: Static render graph with resource/dependency builders
+- **Platform**: GLFW window abstraction, input management
+- **Engine**: Application framework, frame context, main loop
+
+### Working Samples
+- `samples/01_triangle/` - Triangle Demo (colorful triangle, runtime shader compilation)
+- `samples/02_rendergraph/` - RenderGraph Demo (blue triangle, demonstrates render graph usage)
+
+### Key Features
+- ✅ Runtime GLSL → SPIR-V compilation (shaderc)
+- ✅ Smart fallback: loads pre-compiled .spv first, compiles GLSL source if not found
+- ✅ Resource tracking system for leak detection
+- ✅ Window resize handling with SwapChain recreation
+- ✅ Vulkan Validation Layers clean
+
+### Fixed Issues
+- FrameContext initialization bug
+- Window resize crash
+- Resource leak detection
+- Vulkan SDK static library MSVC compatibility (using shaderc DLL instead)
+
+### Next Steps (Phase 2)
+- PBR material system
+- Mesh loading (OBJ/GLTF)
+- Camera system
+- Lighting system

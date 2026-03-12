@@ -1,6 +1,6 @@
 # HappyCat 渲染引擎 - 开发进度
 > 最后更新: 2026-03-11
-> 当前阶段: Phase 1 完成 + Runtime Shader 编译功能已实现
+> 当前阶段: Phase 1 完成 + Runtime Shader 编译功能已完善
 
 ---
 
@@ -53,8 +53,10 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
   - [x] `ResourceBuilder.h` - 资源构建器
   - [x] `DependencyBuilder.h` - 依赖构建器
 - [x] Shader 编译系统
-  - [x] `ShaderCompiler.h/cpp` - 运行时 GLSL 到 SPIR-V 编译
+  - [x] `ShaderCompiler.h/cpp` - 运行时 GLSL 到 SPIR-V 编译 (使用 shaderc)
   - [x] 支持 Vertex, Fragment, Compute, Geometry 着色器阶段
+  - [x] 智能 fallback: 优先加载预编译 .spv，失败时自动编译 GLSL 源码
+  - [x] 优化日志: 只在真正失败时报错，避免误导性的 warning
 
 #### 引擎模块 (HappyCatEngine)
 - [x] 应用程序框架 (`Application.h/cpp`) - 主循环、生命周期管理
@@ -65,9 +67,10 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 - [x] Triangle Demo (`samples/01_triangle/`)
   - [x] 运行成功 - 显示彩色三角形
   - [x] Vulkan Validation Layers 通过
+  - [x] 支持 Runtime Shader 编译
 - [x] RenderGraph Demo (`samples/02_rendergraph/`)
   - [x] 使用 TrianglePass 表示渲染 Pass
-  - [x] Runtime shader 编译测试
+  - [x] 支持 Runtime Shader 编译
   - [x] 缔示蓝色三角形
 
 ---
@@ -106,10 +109,11 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 - **问题**: SPIR-V 需要手动预编译
 - **影响**: 开发效率低
 - **解决方案**:
-  - 创建 `ShaderCompiler` 类 (glslang 进行运行时编译)
-  - 更新 `VKShaderModule` 添加 `LoadSpirV()` 方法
-  - 集成到 `TrianglePass` 使用 runtime 编译
-- **验证**: Triangle Demo 和 RenderGraphDemo 正常运行
+  - 创建 `ShaderCompiler` 类使用 shaderc (DLL) 进行运行时编译
+  - 使用 `shaderc_shared.dll` 避免 Vulkan SDK 静态库的 MSVC 版本兼容问题
+  - 智能 fallback 机制: 优先加载 .spv，失败时编译 GLSL 源码
+  - 优化日志输出，避免误导性的错误信息
+- **验证**: Triangle Demo 和 RenderGraphDemo 正常运行，无需预编译 shader
 
 #### 5. Render Graph 完善
 - **问题**: 当前只有基础框架
@@ -212,6 +216,7 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 | BUG-002 | 窗口 resize 时可能崩溃 | 高 | ✅ 已修复 |
 | BUG-003 | Validation Layer 警告: shader cache 不存在 | 低 | 可忽略 |
 | BUG-004 | Vulkan SDK 1.4.341.1 SPIRV-Tools CMake 配置路径错误 | 高 | ✅ 已修复 |
+| BUG-005 | Vulkan SDK glslang 静态库 MSVC 版本不兼容 | 高 | ✅ 已修复 |
 
 ---
 
@@ -225,7 +230,7 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 | GLM | 1.0.1 | ✅ |
 | spdlog | 1.14.1 | ✅ |
 | ImGui | docking | ✅ |
-| glslang | 14.3.0 | ✅ |
+| shaderc | (Vulkan SDK) | ✅ (DLL) |
 | SPIRV-Cross | 1.3.290.0 | ✅ |
 | stb | latest | ✅ |
 | tinyobjloader | 2.0.0 | ✅ |
@@ -240,6 +245,17 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 ---
 
 ## 更新日志
+
+### 2026-03-11 (晚)
+- ✅ 完善 Runtime Shader 编译功能
+  - 改用 `shaderc_shared.dll` 替代 glslang 静态库
+  - 解决 Vulkan SDK 静态库与本地 MSVC 版本不兼容问题 (LNK2019: `__std_remove_8` 等符号缺失)
+  - 优化日志输出:
+    - SPIR-V 文件不存在时静默 fallback (trace 级别)
+    - 移除 `ShaderCompiler::Compile` 内部重复日志
+    - 只在真正失败时报 error
+  - TriangleDemo 和 RenderGraphDemo 均支持无预编译 .spv 文件运行
+- ✅ 运行时依赖: 需要 `shaderc_shared.dll` 在可执行文件目录
 
 ### 2026-03-11
 - ✅ 实现 Runtime Shader 编译功能
