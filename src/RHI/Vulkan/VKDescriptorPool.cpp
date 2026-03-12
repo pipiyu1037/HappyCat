@@ -98,14 +98,6 @@ bool VKDescriptorPool::AllocateSets(
     return true;
 }
 
-void VKDescriptorPool::FreeSet(VkDescriptorSet set) {
-    if (m_Desc.allowFree) {
-        vkFreeDescriptorSets(m_Device, m_Pool, 1, &set);
-    } else {
-        HC_CORE_WARN("Attempted to free individual descriptor set from pool that doesn't support it");
-    }
-}
-
 void VKDescriptorPool::FreeSets(const std::vector<VkDescriptorSet>& sets) {
     if (m_Desc.allowFree && !sets.empty()) {
         vkFreeDescriptorSets(m_Device, m_Pool,

@@ -25,10 +25,16 @@ bool VKSampler::Initialize(VKDevice* device, const SamplerDesc& desc) {
     createInfo.magFilter = desc.magFilter;
     createInfo.minFilter = desc.minFilter;
     createInfo.mipmapMode = desc.mipmapMode;
+    createInfo.addressModeU = desc.addressModeU;
+    createInfo.addressModeV = desc.addressModeV;
+    createInfo.addressModeW = desc.addressModeW;
+    createInfo.mipLodBias = desc.mipLodBias;
     createInfo.anisotropyEnable = desc.anisotropyEnable ? VK_TRUE : VK_FALSE;
     createInfo.maxAnisotropy = desc.maxAnisotropy;
     createInfo.compareEnable = desc.compareEnable ? VK_TRUE : VK_FALSE;
     createInfo.compareOp = desc.compareOp;
+    createInfo.minLod = desc.minLod;
+    createInfo.maxLod = desc.maxLod;
     createInfo.borderColor = desc.borderColor;
     createInfo.unnormalizedCoordinates = desc.unnormalizedCoordinates;
 

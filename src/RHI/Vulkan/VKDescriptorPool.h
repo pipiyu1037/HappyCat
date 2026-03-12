@@ -45,7 +45,8 @@ public:
         const std::vector<VKDescriptorSetLayout*>& layouts,
         std::vector<VkDescriptorSet>& outSets);
 
-    // Free descriptor sets (if pool supports it void FreeSets(const std::vector<VkDescriptorSet>& sets);
+    // Free descriptor sets (if pool supports it)
+    void FreeSets(const std::vector<VkDescriptorSet>& sets);
 
     // Reset pool (recycles all sets)
     void Reset();

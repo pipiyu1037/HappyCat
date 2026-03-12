@@ -1,7 +1,6 @@
 #include "TexturedQuadApp.h"
 #include "RHI/Vulkan/VKDevice.h"
 #include "RHI/Vulkan/VKSwapChain.h"
-#include "RHI/Vulkan/VKPipeline.h"
 #include "RHI/Vulkan/VKCommandBuffer.h"
 #include "RHI/Vulkan/VKDescriptorPool.h"
 #include "RHI/Vulkan/VKDescriptorSet.h"
@@ -121,8 +120,15 @@ void TexturedQuadApp::OnShutdown() {
     m_DescriptorSets.clear();
     m_DescriptorPool.reset();
     m_DescriptorSetLayout.reset();
-    m_Pipeline.reset();
-    m_PipelineLayout.reset();
+
+    if (m_Pipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(device, m_Pipeline, nullptr);
+        m_Pipeline = VK_NULL_HANDLE;
+    }
+    if (m_PipelineLayout != VK_NULL_HANDLE) {
+        vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
+        m_PipelineLayout = VK_NULL_HANDLE;
+    }
 
     for (auto& fb : m_Framebuffers) {
         if (fb) vkDestroyFramebuffer(device, fb, nullptr);
@@ -174,10 +180,10 @@ void TexturedQuadApp::OnRender() {
     vkCmdBeginRenderPass(vkCmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     // Bind pipeline and descriptor set
-    vkCmdBindPipeline(vkCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline->GetHandle());
+    vkCmdBindPipeline(vkCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
     VkDescriptorSet ds = m_DescriptorSets[frameIndex]->GetHandle();
     vkCmdBindDescriptorSets(vkCmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            m_PipelineLayout->GetHandle(), 0, 1, &ds, 0, nullptr);
+                            m_PipelineLayout, 0, 1, &ds, 0, nullptr);
 
     // Bind vertex and index buffers
     VkBuffer vbs[] = {m_VertexBuffer->GetHandle()};
@@ -299,12 +305,16 @@ bool TexturedQuadApp::CreateDescriptorResources() {
 
 bool TexturedQuadApp::CreatePipeline() {
     auto device = GetDevice();
+    VkDevice vkDevice = device->GetHandle();
 
     // Create pipeline layout
-    PipelineLayoutDesc layoutDesc{};
-    layoutDesc.setLayouts = {m_DescriptorSetLayout.get()};
-    m_PipelineLayout = VKPipelineLayout::Create(device, layoutDesc);
-    if (!m_PipelineLayout) return false;
+    VkDescriptorSetLayout setLayout = m_DescriptorSetLayout->GetHandle();
+    VkPipelineLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layoutInfo.setLayoutCount = 1;
+    layoutInfo.pSetLayouts = &setLayout;
+
+    VK_CHECK(vkCreatePipelineLayout(vkDevice, &layoutInfo, nullptr, &m_PipelineLayout));
 
     // Load shaders using runtime compiler
     auto vertSpirv = LoadOrCompileShader("shaders/textured_quad/textured_quad.vert", ShaderStage::Vertex);
@@ -315,13 +325,13 @@ bool TexturedQuadApp::CreatePipeline() {
         return false;
     }
 
-    VkDevice vkDevice = device->GetHandle();
     VkShaderModule vertModule = CreateShaderModuleFromSpirv(vkDevice, vertSpirv);
     VkShaderModule fragModule = CreateShaderModuleFromSpirv(vkDevice, fragSpirv);
     if (!vertModule || !fragModule) {
         HC_CORE_ERROR("Failed to create shader modules");
         return false;
     }
+
     // Create pipeline with shader stages
     VkPipelineShaderStageCreateInfo shaderStages[2]{};
     shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -333,12 +343,14 @@ bool TexturedQuadApp::CreatePipeline() {
     shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     shaderStages[1].module = fragModule;
     shaderStages[1].pName = "main";
+
     // Dynamic state
     VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = 2;
     dynamicState.pDynamicStates = dynamicStates;
+
     // Vertex input state
     auto binding = Vertex::GetBindingDescription();
     VkPipelineVertexInputStateCreateInfo vertexInput{};
@@ -348,16 +360,19 @@ bool TexturedQuadApp::CreatePipeline() {
     auto attrDescs = Vertex::GetAttributeDescriptions();
     vertexInput.vertexAttributeDescriptionCount = static_cast<u32>(attrDescs.size());
     vertexInput.pVertexAttributeDescriptions = attrDescs.data();
+
     // Input assembly
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
+
     // Viewport state
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
     viewportState.scissorCount = 1;
+
     // Rasterizer
     VkPipelineRasterizationStateCreateInfo rasterizer{};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -367,21 +382,25 @@ bool TexturedQuadApp::CreatePipeline() {
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
     // Multisampling
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
     // Color blending
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
+
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
+
     // Create pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -394,15 +413,23 @@ bool TexturedQuadApp::CreatePipeline() {
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = m_PipelineLayout->GetHandle();
+    pipelineInfo.layout = m_PipelineLayout;
     pipelineInfo.renderPass = m_RenderPass;
     pipelineInfo.subpass = 0;
-    VkPipeline pipeline;
-    VK_CHECK(vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
-    // Cleanup
+
+    VkResult result = vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
+
+    // Cleanup shader modules
     vkDestroyShaderModule(vkDevice, vertModule, nullptr);
     vkDestroyShaderModule(vkDevice, fragModule, nullptr);
-    return m_Pipeline != nullptr;
+
+    if (result != VK_SUCCESS) {
+        HC_CORE_ERROR("Failed to create graphics pipeline");
+        return false;
+    }
+
+    HC_CORE_INFO("Pipeline created successfully");
+    return true;
 }
 
 bool TexturedQuadApp::CreateBuffers() {

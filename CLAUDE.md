@@ -126,10 +126,11 @@ src/
 ## Current Status
 
 Phase 1: Minimal runnable framework - **COMPLETED**
+Phase 2: Core rendering features - **IN PROGRESS**
 
 ### Completed Modules
 - **Core**: Base types, logging (spdlog), math (GLM), threading (ThreadPool)
-- **RHI/Vulkan**: Full Vulkan 1.3 wrappers (Instance, Device, Queue, SwapChain, Pipeline, etc.)
+- **RHI/Vulkan**: Full Vulkan 1.3 wrappers (Instance, Device, Queue, SwapChain, Pipeline, DescriptorSet, Sampler, etc.)
 - **Renderer/RenderGraph**: Static render graph with resource/dependency builders
 - **Platform**: GLFW window abstraction, input management
 - **Engine**: Application framework, frame context, main loop
@@ -137,6 +138,7 @@ Phase 1: Minimal runnable framework - **COMPLETED**
 ### Working Samples
 - `samples/01_triangle/` - Triangle Demo (colorful triangle, runtime shader compilation)
 - `samples/02_rendergraph/` - RenderGraph Demo (blue triangle, demonstrates render graph usage)
+- `samples/03_textured_quad/` - TexturedQuad Demo (MVP uniform buffer, descriptor sets, rotating quad)
 
 ### Key Features
 - ✅ Runtime GLSL → SPIR-V compilation (shaderc)
@@ -144,14 +146,18 @@ Phase 1: Minimal runnable framework - **COMPLETED**
 - ✅ Resource tracking system for leak detection
 - ✅ Window resize handling with SwapChain recreation
 - ✅ Vulkan Validation Layers clean
+- ✅ DescriptorSet system (Uniform Buffer, CombinedImageSampler support)
 
 ### Fixed Issues
 - FrameContext initialization bug
 - Window resize crash
 - Resource leak detection
 - Vulkan SDK static library MSVC compatibility (using shaderc DLL instead)
+- VKBuffer memory allocation sType not set
+- DescriptorType enum duplicate values
 
 ### Next Steps (Phase 2)
+- ✅ DescriptorSet system - **COMPLETED**
 - PBR material system
 - Mesh loading (OBJ/GLTF)
 - Camera system

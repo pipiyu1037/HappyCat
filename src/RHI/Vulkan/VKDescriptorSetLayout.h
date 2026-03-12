@@ -13,8 +13,8 @@ enum class DescriptorType : u32 {
     UniformBuffer = 0,
     CombinedImageSampler = 1,
     StorageBuffer = 2,
-    StorageImage = 1,
-    InputAttachment = 5,
+    StorageImage = 3,
+    InputAttachment = 4,
     Count
 };
 

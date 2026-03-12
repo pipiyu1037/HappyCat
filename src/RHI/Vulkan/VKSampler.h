@@ -15,8 +15,12 @@ struct SamplerDesc {
     VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    float mipLodBias = 000000    float maxAnisotropy = 16.0f;
+    float mipLodBias = 0.0f;
+    float maxAnisotropy = 16.0f;
     bool anisotropyEnable = true;
+    bool compareEnable = false;
+    VkCompareOp compareOp = VK_COMPARE_OP_NEVER;
+    float minLod = 0.0f;
     float maxLod = VK_LOD_CLAMP_NONE;
     VkBorderColor borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     bool unnormalizedCoordinates = false;

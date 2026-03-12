@@ -1,8 +1,36 @@
 # HappyCat 渲染引擎 - 开发进度
-> 最后更新: 2026-03-11
-> 当前阶段: Phase 1 完成 + Runtime Shader 编译功能已完善
+> 最后更新: 2026-03-13
+> 当前阶段: Phase 2 进行中 - DescriptorSet 系统已完成
 
 ---
+
+## 最新进展
+
+### DescriptorSet 系统实现 ✅ (2026-03-13)
+
+实现了完整的 Vulkan DescriptorSet 系统，为后续材质系统、纹理加载等功能奠定基础。
+
+#### 新增类
+- `VKSampler` - 纹理采样器封装
+- `VKDescriptorSetLayout` - Descriptor Set 布局定义
+- `VKDescriptorPool` - Descriptor Pool 管理
+- `VKDescriptorSet` - Descriptor Set 封装，支持 Uniform Buffer 和 CombinedImageSampler 写入
+
+#### 修改的类
+- `VKPipelineLayout` - 支持外部 DescriptorSetLayout
+- `VKPipeline` - 支持外部 PipelineLayout
+- `VKCommandBuffer` - 新增 BindDescriptorSets, BindVertexBuffers, BindIndexBuffer, PushConstants 方法
+
+#### 新增示例
+- `samples/03_textured_quad/` - TexturedQuad Demo
+  - 演示 MVP Uniform Buffer 传递
+  - 演示 DescriptorSet 绑定
+  - 演示旋转动画
+
+#### 修复的问题
+- VKBuffer 内存分配 sType 未设置
+- DescriptorType 枚举值重复
+- SamplerDesc 缺少 compareEnable/compareOp/minLod 字段
 
 ---
 
@@ -44,6 +72,10 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 - [x] 图形管线 (`VKPipeline.h/cpp`)
 - [x] 渲染 Pass (`VKRenderPass.h/cpp`)
 - [x] 帧缓冲 (`VKFramebuffer.h/cpp`)
+- [x] 采样器 (`VKSampler.h/cpp`) - 纹理采样配置
+- [x] Descriptor Set Layout (`VKDescriptorSetLayout.h/cpp`) - Descriptor 布局定义
+- [x] Descriptor Pool (`VKDescriptorPool.h/cpp`) - Descriptor 内存池
+- [x] Descriptor Set (`VKDescriptorSet.h/cpp`) - Descriptor Set 封装
 
 #### 渲染器模块 (HappyCatRenderer)
 - [x] Render Graph 基础架构
@@ -71,7 +103,12 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 - [x] RenderGraph Demo (`samples/02_rendergraph/`)
   - [x] 使用 TrianglePass 表示渲染 Pass
   - [x] 支持 Runtime Shader 编译
-  - [x] 缔示蓝色三角形
+  - [x] 显示蓝色三角形
+- [x] TexturedQuad Demo (`samples/03_textured_quad/`)
+  - [x] 演示 MVP Uniform Buffer 传递
+  - [x] 演示 DescriptorSet 绑定和使用
+  - [x] 演示旋转动画效果
+  - [x] Vulkan Validation Layers 通过
 
 ---
 
@@ -151,23 +188,30 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 
 ## 下一阶段计划
 
-### Phase 2: 核心渲染功能
+### Phase 2: 核心渲染功能 (进行中)
 
-1. **PBR 材质系统**
+1. **DescriptorSet 系统** ✅ 已完成
+   - VKSampler 类
+   - VKDescriptorSetLayout 类
+   - VKDescriptorPool 类
+   - VKDescriptorSet 类
+   - TexturedQuad Demo 验证
+
+2. **PBR 材质系统** (下一步)
    - Material 类设计
    - Texture 加载 (stb_image)
    - Descriptor Set 管理
 
-2. **Mesh 加载**
+3. **Mesh 加载**
    - OBJ/GLTF 加载器
    - Vertex Buffer 管理
    - Index Buffer 管理
 
-3. **Camera 系统**
+4. **Camera 系统**
    - Perspective/Orthographic 相机
    - 相机控制器
 
-4. **光照系统**
+5. **光照系统**
    - Directional Light
    - Point Light
    - Spot Light
@@ -245,6 +289,25 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 ---
 
 ## 更新日志
+
+### 2026-03-13
+- ✅ 实现 DescriptorSet 系统 (Phase 2 基础)
+  - 新增 `VKSampler` 类 - 纹理采样器封装
+  - 新增 `VKDescriptorSetLayout` 类 - Descriptor Set 布局定义
+  - 新增 `VKDescriptorPool` 类 - Descriptor Pool 管理
+  - 新增 `VKDescriptorSet` 类 - Descriptor Set 封装
+  - 修改 `VKPipelineLayout` 支持外部 DescriptorSetLayout
+  - 修改 `VKPipeline` 支持外部 PipelineLayout
+  - 扩展 `VKCommandBuffer` 添加绑定方法
+- ✅ 新增 TexturedQuad Demo (`samples/03_textured_quad/`)
+  - 演示 MVP Uniform Buffer 传递
+  - 演示 DescriptorSet 绑定
+  - 演示旋转动画
+- ✅ 修复多个 Bug:
+  - VKBuffer 内存分配 sType 未设置
+  - DescriptorType 枚举值重复 (StorageImage = 1 与 CombinedImageSampler 冲突)
+  - SamplerDesc 缺少 compareEnable/compareOp/minLod 字段
+  - VKDescriptorPool 注释语法错误
 
 ### 2026-03-11 (晚)
 - ✅ 完善 Runtime Shader 编译功能

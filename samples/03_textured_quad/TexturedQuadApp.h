@@ -6,7 +6,6 @@
 #include "RHI/Vulkan/VKDescriptorSetLayout.h"
 #include "RHI/Vulkan/VKDescriptorPool.h"
 #include "RHI/Vulkan/VKDescriptorSet.h"
-#include "RHI/Vulkan/VKPipeline.h"
 #include <memory>
 #include <vector>
 
@@ -44,8 +43,8 @@ private:
     VkRenderPass m_RenderPass = VK_NULL_HANDLE;
     std::vector<VkFramebuffer> m_Framebuffers;
 
-    std::unique_ptr<VKPipelineLayout> m_PipelineLayout;
-    std::unique_ptr<VKPipeline> m_Pipeline;
+    VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
+    VkPipeline m_Pipeline = VK_NULL_HANDLE;
 
     std::unique_ptr<VKDescriptorSetLayout> m_DescriptorSetLayout;
     std::unique_ptr<VKDescriptorPool> m_DescriptorPool;
