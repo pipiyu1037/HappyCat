@@ -21,13 +21,12 @@ namespace happycat {
 // Define PI constant
 constexpr float PI = 3.14159265359f;
 
-// Vertex structure with tangent and bitangent for normal mapping
+// Vertex structure with tangent for normal mapping (bitangent computed via cross product)
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 normal;
     glm::vec2 texCoord;
     glm::vec3 tangent;
-    glm::vec3 bitangent;
 
     static VkVertexInputBindingDescription GetBindingDescription() {
         VkVertexInputBindingDescription bindingDesc{};
@@ -38,7 +37,7 @@ struct Vertex {
     }
 
     static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-        std::vector<VkVertexInputAttributeDescription> attributeDescs(5);
+        std::vector<VkVertexInputAttributeDescription> attributeDescs(4);
 
         // Position
         attributeDescs[0].binding = 0;
@@ -64,12 +63,6 @@ struct Vertex {
         attributeDescs[3].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescs[3].offset = offsetof(Vertex, tangent);
 
-        // Bitangent
-        attributeDescs[4].binding = 0;
-        attributeDescs[4].location = 4;
-        attributeDescs[4].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescs[4].offset = offsetof(Vertex, bitangent);
-
         return attributeDescs;
     }
 };
@@ -94,11 +87,8 @@ static void CreateSphere(std::vector<Vertex>& vertices, std::vector<u32>& indice
             v.normal = glm::normalize(v.pos);
             v.texCoord = glm::vec2(float(seg) / float(segments), float(ring) / float(rings));
 
-            // Calculate tangent and bitangent
-            glm::vec3 tangent = glm::normalize(glm::vec3(-sin(theta), 0, cos(theta)));
-            glm::vec3 bitangent = glm::cross(v.normal, tangent);
-            v.tangent = tangent;
-            v.bitangent = bitangent;
+            // Calculate tangent (bitangent will be computed in shader via cross product)
+            v.tangent = glm::normalize(glm::vec3(-sin(theta), 0, cos(theta)));
 
             vertices.push_back(v);
         }
