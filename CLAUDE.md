@@ -139,6 +139,7 @@ Phase 2: Core rendering features - **IN PROGRESS**
 - `samples/01_triangle/` - Triangle Demo (colorful triangle, runtime shader compilation)
 - `samples/02_rendergraph/` - RenderGraph Demo (blue triangle, demonstrates render graph usage)
 - `samples/03_textured_quad/` - TexturedQuad Demo (MVP uniform buffer, descriptor sets, rotating quad)
+- `samples/04_pbr_material/` - PBR Material Demo (PBR sphere, material system, TBN matrix for normal mapping)
 
 ### Key Features
 - ✅ Runtime GLSL → SPIR-V compilation (shaderc)
@@ -158,7 +159,7 @@ Phase 2: Core rendering features - **IN PROGRESS**
 
 ### Next Steps (Phase 2)
 - ✅ DescriptorSet system - **COMPLETED**
-- PBR material system
+- ✅ PBR material system - **COMPLETED**
 - Mesh loading (OBJ/GLTF)
 - Camera system
 - Lighting system

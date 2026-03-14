@@ -1,10 +1,37 @@
 # HappyCat 渲染引擎 - 开发进度
-> 最后更新: 2026-03-13
-> 当前阶段: Phase 2 进行中 - DescriptorSet 系统已完成
+> 最后更新: 2026-03-14
+> 当前阶段: Phase 2 进行中 - PBR 材质系统已完成
 
 ---
 
 ## 最新进展
+
+### PBR 材质系统实现 ✅ (2026-03-14)
+
+实现了完整的 PBR (Physically Based Rendering) 材质系统，支持基于物理的渲染。
+
+#### 新增类
+- `Material` - PBR 材质类，管理材质参数和纹理
+- `MaterialTypes` - 材质类型定义 (PBRMaterialParams, MaterialTextureSlot, MaterialTextureFlags)
+- `Texture2D` - 2D 纹理类，支持从文件和内存加载
+- `MaterialCache` - 材质缓存系统
+
+#### 新增示例
+- `samples/04_pbr_material/` - PBR Material Demo
+  - 显示 PBR 渲染的球体
+  - 演示材质参数控制 (albedo, metallic, roughness, AO)
+  - 演示 TBN 矩阵计算用于法线贴图
+  - 运行时着色器编译
+  - 无 Vulkan 验证层警告或错误
+
+#### 修复的问题
+- `Material::CreateDefaultTextures` 签名不匹配 (添加 VKDevice* 参数)
+- `VKImage` 初始化 bug (samples 和 VkMemoryAllocateInfo.sType 未设置)
+- `VKImage` 析构函数内存泄漏 (未调用 vkFreeMemory)
+- 静态默认纹理资源泄漏 (添加 CleanupDefaultTextures 方法)
+- 顶点/片段着色器接口不匹配 (TBN 矩阵输出)
+- SPIR-V Capability DemoteToHelperInvocation 警告 (启用 Vulkan 1.3 特性)
+- 未使用的顶点属性警告 (移除 bitangent 属性)
 
 ### DescriptorSet 系统实现 ✅ (2026-03-13)
 
@@ -61,12 +88,12 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 - [x] RHI 类型定义 (`RHITypes.h`) - Format, BufferUsage, TextureUsage
 - [x] Vulkan 实例 (`VKInstance.h/cpp`) - 支持 Validation Layers
 - [x] 物理设备 (`VKPhysicalDevice.h/cpp`) - GPU 选择和属性查询
-- [x] 逻辑设备 (`VKDevice.h/cpp`) - 多队列支持 (Graphics, Compute, Transfer, Present)
+- [x] 逻辑设备 (`VKDevice.h/cpp`) - 多队列支持 (Graphics, Compute, Transfer, Present), Vulkan 1.3 特性
 - [x] 队列封装 (`VKQueue.h/cpp`)
 - [x] 命令池/缓冲区 (`VKCommandPool.h/cpp`, `VKCommandBuffer.h/cpp`)
 - [x] 同步原语 (`VKSemaphore.h/cpp`, `VKFence.h/cpp`)
 - [x] 交换链 (`VKSwapChain.h/cpp`) - 支持 VSync 和窗口大小调整
-- [x] 图像/图像视图 (`VKImage.h/cpp`, `VKImageView.h/cpp`)
+- [x] 图像/图像视图 (`VKImage.h/cpp`, `VKImageView.h/cpp`) - 正确的内存管理
 - [x] 缓冲区 (`VKBuffer.h/cpp`)
 - [x] Shader 模块 (`VKShaderModule.h/cpp`)
 - [x] 图形管线 (`VKPipeline.h/cpp`)
@@ -89,6 +116,12 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
   - [x] 支持 Vertex, Fragment, Compute, Geometry 着色器阶段
   - [x] 智能 fallback: 优先加载预编译 .spv，失败时自动编译 GLSL 源码
   - [x] 优化日志: 只在真正失败时报错，避免误导性的 warning
+- [x] PBR 材质系统
+  - [x] `Material.h/cpp` - PBR 材质类
+  - [x] `MaterialTypes.h` - 材质类型定义
+  - [x] `Texture2D.h/cpp` - 2D 纹理加载和采样
+  - [x] `MaterialCache.h/cpp` - 材质缓存
+  - [x] 默认纹理系统 (白色、法线、MRA、自发光)
 
 #### 引擎模块 (HappyCatEngine)
 - [x] 应用程序框架 (`Application.h/cpp`) - 主循环、生命周期管理
@@ -109,6 +142,12 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
   - [x] 演示 DescriptorSet 绑定和使用
   - [x] 演示旋转动画效果
   - [x] Vulkan Validation Layers 通过
+- [x] PBR Material Demo (`samples/04_pbr_material/`)
+  - [x] PBR 材质系统
+  - [x] 显示旋转的 PBR 球体
+  - [x] TBN 矩阵计算用于法线贴图
+  - [x] 默认纹理系统
+  - [x] 无 Vulkan 验证层警告或错误
 
 ---
 
@@ -197,10 +236,12 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
    - VKDescriptorSet 类
    - TexturedQuad Demo 验证
 
-2. **PBR 材质系统** (下一步)
-   - Material 类设计
-   - Texture 加载 (stb_image)
-   - Descriptor Set 管理
+2. **PBR 材质系统** ✅ 已完成
+   - Material 类 - PBR 材质参数和纹理管理
+   - MaterialTypes - 材质类型定义
+   - Texture2D 类 - 纹理加载和采样
+   - MaterialCache - 材质缓存
+   - PBRMaterialDemo 验证 - PBR 球体渲染
 
 3. **Mesh 加载**
    - OBJ/GLTF 加载器
@@ -261,6 +302,11 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 | BUG-003 | Validation Layer 警告: shader cache 不存在 | 低 | 可忽略 |
 | BUG-004 | Vulkan SDK 1.4.341.1 SPIRV-Tools CMake 配置路径错误 | 高 | ✅ 已修复 |
 | BUG-005 | Vulkan SDK glslang 静态库 MSVC 版本不兼容 | 高 | ✅ 已修复 |
+| BUG-006 | PBR Material Demo 编译错误 | 高 | ✅ 已修复 |
+| BUG-007 | VKImage samples 字段未初始化 | 高 | ✅ 已修复 |
+| BUG-008 | VKImage 内存泄漏 | 高 | ✅ 已修复 |
+| BUG-009 | SPIR-V Capability DemoteToHelperInvocation 警告 | 中 | ✅ 已修复 |
+| BUG-010 | 未使用的顶点属性警告 | 低 | ✅ 已修复 |
 
 ---
 
@@ -289,6 +335,27 @@ HappyCat 是一个基于 Vulkan 1.3 的现代渲染引擎，采用 Render Graph 
 ---
 
 ## 更新日志
+
+### 2026-03-14
+- ✅ 实现 PBR 材质系统 (Phase 2 核心功能)
+  - 新增 `Material` 类 - PBR 材质参数和纹理管理
+  - 新增 `MaterialTypes` - 材质类型定义
+  - 新增 `Texture2D` 类 - 纹理加载和采样
+  - 新增 `MaterialCache` - 材质缓存系统
+- ✅ 新增 PBR Material Demo (`samples/04_pbr_material/`)
+  - 显示 PBR 渲染的球体
+  - 演示材质参数控制 (albedo, metallic, roughness, AO)
+  - 演示 TBN 矩阵计算用于法线贴图
+  - 运行时着色器编译
+  - 无 Vulkan 验证层警告或错误
+- ✅ 修复多个 Bug:
+  - Material::CreateDefaultTextures 签名不匹配
+  - VKImage 初始化 bug (samples 和 sType 未设置)
+  - VKImage 析构函数内存泄漏
+  - 静态默认纹理资源泄漏
+  - 顶点/片段着色器接口不匹配 (TBN 矩阵)
+  - SPIR-V Capability DemoteToHelperInvocation 警告
+  - 未使用的顶点属性警告 (bitangent)
 
 ### 2026-03-13
 - ✅ 实现 DescriptorSet 系统 (Phase 2 基础)
