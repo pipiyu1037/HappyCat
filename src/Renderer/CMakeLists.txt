@@ -28,6 +28,17 @@ add_library(HappyCatRenderer STATIC
     # Shader
     Shader/ShaderCompiler.h
     Shader/ShaderCompiler.cpp
+
+    # Material
+    Material/MaterialTypes.h
+    Material/Texture2D.h
+    Material/Texture2D.cpp
+    Material/TextureCache.h
+    Material/TextureCache.cpp
+    Material/Material.h
+    Material/Material.cpp
+    Material/MaterialCache.h
+    Material/MaterialCache.cpp
 )
 
 target_include_directories(HappyCatRenderer PUBLIC
@@ -39,6 +50,7 @@ target_include_directories(HappyCatRenderer PUBLIC
 target_link_libraries(HappyCatRenderer PUBLIC
     HappyCatCore
     HappyCatRHI
+    stb
     "${VULKAN_SDK}/Lib/shaderc_shared.lib"
 )
 
