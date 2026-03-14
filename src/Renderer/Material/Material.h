@@ -67,6 +67,9 @@ public:
     bool IsTransparent() const { return m_IsTransparent; }
     void SetTransparent(bool transparent) { m_IsTransparent = transparent; }
 
+    // Cleanup static default textures (call before shutting down Vulkan)
+    static void CleanupDefaultTextures();
+
 private:
     Material() = default;
     bool Initialize(VKDevice* device, const String& name);

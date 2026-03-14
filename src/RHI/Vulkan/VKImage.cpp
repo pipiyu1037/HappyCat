@@ -21,7 +21,9 @@ VKImage::~VKImage() {
     if (m_Image != VK_NULL_HANDLE) {
         vkDestroyImage(m_Device, m_Image, nullptr);
     }
-    // Note: Memory should be freed with VMA or custom allocator
+    if (m_Memory != VK_NULL_HANDLE) {
+        vkFreeMemory(m_Device, m_Memory, nullptr);
+    }
 }
 
 bool VKImage::Initialize(
@@ -48,6 +50,8 @@ bool VKImage::Initialize(
     createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     createInfo.usage = usage;
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    createInfo.flags = 0;
 
     VK_CHECK(vkCreateImage(m_Device, &createInfo, nullptr, &m_Image));
 
@@ -55,7 +59,7 @@ bool VKImage::Initialize(
     VkMemoryRequirements memReqs{};
     vkGetImageMemoryRequirements(m_Device, m_Image, &memReqs);
 
-    VkMemoryAllocateInfo allocInfo{};
+    VkMemoryAllocateInfo allocInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
     allocInfo.allocationSize = memReqs.size;
     allocInfo.memoryTypeIndex = device->FindMemoryType(memReqs.memoryTypeBits, memoryFlags);
 

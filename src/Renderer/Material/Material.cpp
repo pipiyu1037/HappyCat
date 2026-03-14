@@ -162,7 +162,7 @@ bool Material::CreateDescriptorPool(u32 framesInFlight) {
     return true;
 }
 
-void Material::CreateDefaultTextures() {
+void Material::CreateDefaultTextures(VKDevice* device) {
     // Create a 1x1 white pixel texture
     u8 whitePixel[4] = {255, 255, 255, 255};  // RGBA white
 
@@ -171,7 +171,7 @@ void Material::CreateDefaultTextures() {
     desc.generateMipmaps = false;
 
     s_DefaultWhiteTexture = Texture2D::CreateFromMemory(
-        m_Device,
+        device,
         whitePixel,
         1, 1, 4,
         desc);
@@ -189,7 +189,7 @@ void Material::CreateDefaultTextures() {
     normalDesc.generateMipmaps = false;
 
     s_DefaultNormalTexture = Texture2D::CreateFromMemory(
-        m_Device,
+        device,
         normalPixel,
         1, 1, 4,
         normalDesc);
@@ -207,7 +207,7 @@ void Material::CreateDefaultTextures() {
     mraDesc.generateMipmaps = false;
 
     s_DefaultMRATexture = Texture2D::CreateFromMemory(
-        m_Device,
+        device,
         mraPixel,
         1, 1, 4,
         mraDesc);
@@ -225,7 +225,7 @@ void Material::CreateDefaultTextures() {
     emissiveDesc.generateMipmaps = false;
 
     s_DefaultEmissiveTexture = Texture2D::CreateFromMemory(
-        m_Device,
+        device,
         emissivePixel,
         1, 1, 4,
         emissiveDesc);
@@ -245,7 +245,7 @@ void Material::UpdateDescriptorSets() {
 
     // Ensure default textures exist
     if (!s_DefaultWhiteTexture) {
-        CreateDefaultTextures();
+        CreateDefaultTextures(m_Device);
     }
 
     for (size_t i = 0; i < m_DescriptorSets.size(); ++i) {
@@ -289,6 +289,14 @@ VKDescriptorSet* Material::GetDescriptorSet(u32 frameIndex) const {
         return m_DescriptorSets[frameIndex].get();
     }
     return nullptr;
+}
+
+void Material::CleanupDefaultTextures() {
+    s_DefaultWhiteTexture.reset();
+    s_DefaultNormalTexture.reset();
+    s_DefaultMRATexture.reset();
+    s_DefaultEmissiveTexture.reset();
+    HC_CORE_INFO("Cleaned up default textures for material system");
 }
 
 } // namespace happycat

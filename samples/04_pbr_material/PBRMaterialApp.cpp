@@ -178,6 +178,7 @@ void PBRMaterialApp::OnShutdown() {
     vkDeviceWaitIdle(device);
 
     m_Material.reset();
+    Material::CleanupDefaultTextures();
     m_IndexBuffer.reset();
     m_VertexBuffer.reset();
     m_SceneDescriptorSets.clear();
