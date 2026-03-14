@@ -60,6 +60,12 @@ bool VKDevice::Initialize(const CreateInfo& info) {
     deviceFeatures.fillModeNonSolid = VK_TRUE;
     deviceFeatures.wideLines = VK_TRUE;
 
+    // Vulkan 1.3 features (for shaderDemoteToHelperInvocation)
+    VkPhysicalDeviceVulkan13Features vulkan13Features{};
+    vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    vulkan13Features.shaderDemoteToHelperInvocation = VK_TRUE;
+    vulkan13Features.pNext = nullptr;
+
     // Device create info
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -68,6 +74,7 @@ bool VKDevice::Initialize(const CreateInfo& info) {
     createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.enabledExtensionCount = static_cast<u32>(std::size(DEVICE_EXTENSIONS));
     createInfo.ppEnabledExtensionNames = DEVICE_EXTENSIONS;
+    createInfo.pNext = &vulkan13Features;
 
     // Enable validation layers for device (same as instance)
     if (info.enableValidation) {
